@@ -1,0 +1,730 @@
+document.addEventListener('DOMContentLoaded', function() {
+    // API endpoints
+    const API = {
+        vehicles: '/api/vehicles',
+        logs: '/api/logs',
+    };
+
+    // DOM elements
+    const vehicleSelect = document.getElementById('vehicle-select');
+    const vehicleForm = document.getElementById('vehicle-form');
+    const toggleEditBtn = document.getElementById('toggle-edit');
+    const saveVehicleBtn = document.getElementById('save-vehicle');
+    const cancelEditBtn = document.getElementById('cancel-edit');
+    const addLogEntryBtn = document.getElementById('add-log-entry');
+    const logEntriesContainer = document.getElementById('log-entries');
+    
+    // Modals
+    const entryModal = document.getElementById('entry-modal');
+    const vehicleModal = document.getElementById('vehicle-modal');
+    const maintenanceForm = document.getElementById('maintenance-form');
+    const newVehicleForm = document.getElementById('new-vehicle-form');
+    
+    // Current selected vehicle
+    let currentVehicleId = null;
+    
+    // Initialize the application
+    initApp();
+
+    // Application initialization
+    async function initApp() {
+        try {
+            setupEventListeners();
+            await populateVehicleDropdown();
+            
+            // Show delete vehicle button
+            addDeleteVehicleButton();
+        } catch (error) {
+            console.error('Error initializing app:', error);
+            alert('There was an error initializing the application. Please try again later.');
+        }
+    }
+
+    // Add delete vehicle button to the vehicle info card
+    function addDeleteVehicleButton() {
+        const cardActions = document.querySelector('.vehicle-info .card-actions');
+        
+        // Check if button already exists
+        if (!document.getElementById('delete-vehicle')) {
+            const deleteBtn = document.createElement('button');
+            deleteBtn.id = 'delete-vehicle';
+            deleteBtn.className = 'btn btn-danger';
+            deleteBtn.innerHTML = '<i class="fas fa-trash"></i> Delete Vehicle';
+            deleteBtn.addEventListener('click', deleteVehicle);
+            
+            // Add the button to the card actions
+            cardActions.appendChild(deleteBtn);
+        }
+    }
+
+    // Populate vehicle dropdown with vehicles from API
+    async function populateVehicleDropdown() {
+        try {
+            // Fetch vehicles from API
+            const response = await fetch(API.vehicles);
+            if (!response.ok) throw new Error('Failed to fetch vehicles');
+            
+            const vehicles = await response.json();
+            
+            // Clear existing options except the default and "Add New"
+            while (vehicleSelect.options.length > 2) {
+                vehicleSelect.remove(1);
+            }
+            
+            // Make sure we have the "Add New" option at position 1
+            if (vehicleSelect.options.length < 2 || vehicleSelect.options[1].value !== "new") {
+                const newOption = document.createElement('option');
+                newOption.value = "new";
+                newOption.textContent = "+ Add New Vehicle";
+                if (vehicleSelect.options.length > 1) {
+                    vehicleSelect.insertBefore(newOption, vehicleSelect.options[1]);
+                } else {
+                    vehicleSelect.appendChild(newOption);
+                }
+            }
+            
+            // Add vehicle options
+            vehicles.forEach(vehicle => {
+                const option = document.createElement('option');
+                option.value = vehicle._id;
+                option.textContent = `${vehicle.year} ${vehicle.make} ${vehicle.model} (${vehicle.plate})`;
+                vehicleSelect.appendChild(option);
+            });
+            
+            // Set default vehicle if available
+            if (vehicles.length > 0) {
+                vehicleSelect.value = vehicles[0]._id;
+                currentVehicleId = vehicles[0]._id;
+                await displayVehicleInfo(vehicles[0]._id);
+                await displayMaintenanceLogs(vehicles[0]._id);
+            }
+            
+            console.log("Vehicle dropdown populated with", vehicleSelect.options.length, "options");
+            
+        } catch (error) {
+            console.error('Error populating vehicle dropdown:', error);
+            alert('Failed to load vehicles. Please refresh the page and try again.');
+        }
+    }
+
+    // Set up event listeners
+    function setupEventListeners() {
+        // Vehicle selection change
+        vehicleSelect.addEventListener('change', handleVehicleSelect);
+        
+        // Vehicle info edit controls
+        toggleEditBtn.addEventListener('click', toggleVehicleEditMode);
+        saveVehicleBtn.addEventListener('click', saveVehicleInfo);
+        cancelEditBtn.addEventListener('click', cancelVehicleEdit);
+        
+        // Maintenance log controls
+        addLogEntryBtn.addEventListener('click', () => openEntryModal());
+        
+        // Maintenance form submission
+        maintenanceForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            saveMaintenanceEntry();
+        });
+        
+        document.getElementById('cancel-entry').addEventListener('click', closeEntryModal);
+        
+        document.querySelectorAll('.modal .close').forEach(btn => {
+            btn.addEventListener('click', function() {
+                entryModal.style.display = 'none';
+                vehicleModal.style.display = 'none';
+            });
+        });
+        
+        // Service description selection
+        document.getElementById('service-description').addEventListener('change', function() {
+            const otherField = document.getElementById('service-description-other');
+            otherField.style.display = this.value === 'other' ? 'block' : 'none';
+        });
+        
+        // New vehicle form submission
+        newVehicleForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            saveVehicle();
+        });
+        
+        document.getElementById('cancel-vehicle').addEventListener('click', closeVehicleModal);
+        
+        // Add event delegation for maintenance log actions
+        logEntriesContainer.addEventListener('click', function(e) {
+            // Check if clicked element or its parent is an edit button
+            const editBtn = e.target.closest('.edit-entry');
+            if (editBtn) {
+                const row = editBtn.closest('tr');
+                const entryId = row.dataset.id;
+                openEntryModal(entryId);
+                return;
+            }
+            
+            // Check if clicked element or its parent is a delete button
+            const deleteBtn = e.target.closest('.delete-entry');
+            if (deleteBtn) {
+                const row = deleteBtn.closest('tr');
+                const entryId = row.dataset.id;
+                deleteMaintenanceEntry(entryId);
+                return;
+            }
+        });
+    }
+
+    // Handle vehicle selection change
+    async function handleVehicleSelect() {
+        const selectedValue = vehicleSelect.value;
+        console.log("Vehicle selected:", selectedValue);
+        
+        if (selectedValue === 'new') {
+            // Open add new vehicle modal
+            openVehicleModal();
+            // Reset selection
+            vehicleSelect.value = currentVehicleId || '';
+        } else if (selectedValue) {
+            // Display selected vehicle info
+            currentVehicleId = selectedValue;
+            await displayVehicleInfo(selectedValue);
+            await displayMaintenanceLogs(selectedValue);
+        }
+    }
+
+    // Display vehicle information
+    async function displayVehicleInfo(vehicleId) {
+        try {
+            const response = await fetch(`${API.vehicles}/${vehicleId}`);
+            if (!response.ok) throw new Error('Failed to fetch vehicle information');
+            
+            const vehicle = await response.json();
+            
+            // Fill in vehicle information
+            document.getElementById('input-year').value = vehicle.year || '';
+            document.getElementById('input-brand').value = vehicle.make || '';
+            document.getElementById('input-model').value = vehicle.model || '';
+            document.getElementById('input-plate').value = vehicle.plate || '';
+            document.getElementById('input-status').value = vehicle.status || 'active';
+            document.getElementById('input-fuel-type').value = vehicle.fuelType || 'regular';
+            document.getElementById('input-tank-capacity').value = vehicle.tankCapacity || '';
+            document.getElementById('input-location').value = vehicle.location || '';
+            document.getElementById('input-acquisition-date').value = vehicle.acquisitionDate ? new Date(vehicle.acquisitionDate).toISOString().split('T')[0] : '';
+            
+            document.getElementById('input-mileage').value = vehicle.currentMileage || 0;
+            document.getElementById('input-last-service').value = vehicle.lastService ? new Date(vehicle.lastService).toISOString().split('T')[0] : '';
+            document.getElementById('input-next-service').value = vehicle.nextService ? new Date(vehicle.nextService).toISOString().split('T')[0] : '';
+            
+        } catch (error) {
+            console.error('Error displaying vehicle info:', error);
+            alert('Failed to load vehicle information. Please try again.');
+        }
+    }
+
+    // Display maintenance logs for selected vehicle
+    async function displayMaintenanceLogs(vehicleId) {
+        try {
+            // Clear existing log entries
+            logEntriesContainer.innerHTML = '';
+            
+            // Fetch logs from API
+            const response = await fetch(`${API.vehicles}/${vehicleId}/logs`);
+            if (!response.ok) throw new Error('Failed to fetch maintenance logs');
+            
+            const logs = await response.json();
+            
+            // Generate log entries
+            if (logs.length > 0) {
+                logs.forEach(log => {
+                    const row = document.createElement('tr');
+                    row.dataset.id = log._id;
+                    
+                    row.innerHTML = `
+                        <td>${new Date(log.date).toISOString().split('T')[0]}</td>
+                        <td>${log.description}</td>
+                        <td>${Number(log.odometer).toLocaleString()}</td>
+                        <td>${log.serviceProvider || ''}</td>
+                        <td>$${parseFloat(log.cost || 0).toFixed(2)}</td>
+                        <td>${log.nextServiceDue ? new Date(log.nextServiceDue).toISOString().split('T')[0] : ''}</td>
+                        <td>
+                            <button class="btn-icon edit-entry" title="Edit">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn-icon delete-entry" title="Delete">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    `;
+                    
+                    logEntriesContainer.appendChild(row);
+                });
+            } else {
+                // Show message if no logs found
+                const row = document.createElement('tr');
+                row.innerHTML = '<td colspan="7" class="text-center">No maintenance records found. Add your first entry!</td>';
+                logEntriesContainer.appendChild(row);
+            }
+            
+        } catch (error) {
+            console.error('Error displaying maintenance logs:', error);
+            alert('Failed to load maintenance logs. Please try again.');
+            
+            // Show empty state
+            const row = document.createElement('tr');
+            row.innerHTML = '<td colspan="7" class="text-center">Failed to load maintenance records.</td>';
+            logEntriesContainer.appendChild(row);
+        }
+    }
+
+    // Toggle vehicle information edit mode
+    function toggleVehicleEditMode() {
+        const formInputs = vehicleForm.querySelectorAll('.form-input');
+        formInputs.forEach(input => {
+            input.disabled = !input.disabled;
+        });
+        
+        toggleEditBtn.style.display = 'none';
+        saveVehicleBtn.style.display = 'inline-block';
+        cancelEditBtn.style.display = 'inline-block';
+        
+        // Hide delete button in edit mode
+        const deleteVehicleBtn = document.getElementById('delete-vehicle');
+        if (deleteVehicleBtn) {
+            deleteVehicleBtn.style.display = 'none';
+        }
+    }
+
+    // Save vehicle information
+    async function saveVehicleInfo() {
+        try {
+            const vehicleId = currentVehicleId;
+            
+            if (!vehicleId) {
+                alert('No vehicle selected. Please select a vehicle first.');
+                return;
+            }
+            
+            // Gather vehicle information from form
+            const vehicleData = {
+                year: parseInt(document.getElementById('input-year').value),
+                make: document.getElementById('input-brand').value,
+                model: document.getElementById('input-model').value,
+                plate: document.getElementById('input-plate').value,
+                status: document.getElementById('input-status').value,
+                fuelType: document.getElementById('input-fuel-type').value,
+                tankCapacity: parseFloat(document.getElementById('input-tank-capacity').value) || 0,
+                location: document.getElementById('input-location').value,
+                acquisitionDate: document.getElementById('input-acquisition-date').value,
+                currentMileage: parseInt(document.getElementById('input-mileage').value) || 0,
+                lastService: document.getElementById('input-last-service').value,
+                nextService: document.getElementById('input-next-service').value
+            };
+            
+            // Update vehicle via API
+            const response = await fetch(`${API.vehicles}/${vehicleId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(vehicleData)
+            });
+            
+            if (!response.ok) throw new Error('Failed to update vehicle');
+            
+            // Update vehicle dropdown
+            await populateVehicleDropdown();
+            
+            // Exit edit mode
+            exitVehicleEditMode();
+            
+            // Show success message
+            alert('Vehicle information saved successfully!');
+            
+        } catch (error) {
+            console.error('Error saving vehicle info:', error);
+            alert('Failed to save vehicle information. Please try again.');
+        }
+    }
+
+    // Cancel vehicle edit
+    async function cancelVehicleEdit() {
+        // Restore original values
+        await displayVehicleInfo(currentVehicleId);
+        
+        // Exit edit mode
+        exitVehicleEditMode();
+    }
+    
+    // Exit vehicle edit mode (common function)
+    function exitVehicleEditMode() {
+        // Disable all form inputs
+        const formInputs = vehicleForm.querySelectorAll('.form-input');
+        formInputs.forEach(input => {
+            input.disabled = true;
+        });
+        
+        // Reset button display
+        toggleEditBtn.style.display = 'inline-block';
+        saveVehicleBtn.style.display = 'none';
+        cancelEditBtn.style.display = 'none';
+        
+        // Show delete button again
+        const deleteVehicleBtn = document.getElementById('delete-vehicle');
+        if (deleteVehicleBtn) {
+            deleteVehicleBtn.style.display = 'inline-block';
+        }
+    }
+
+    // Delete vehicle
+    async function deleteVehicle() {
+        const vehicleId = currentVehicleId;
+        
+        if (!vehicleId) {
+            alert('No vehicle selected. Please select a vehicle first.');
+            return;
+        }
+        
+        if (confirm('Are you sure you want to delete this vehicle? All maintenance records associated with this vehicle will also be deleted. This action cannot be undone.')) {
+            try {
+                // Delete vehicle via API
+                const response = await fetch(`${API.vehicles}/${vehicleId}`, {
+                    method: 'DELETE'
+                });
+                
+                if (!response.ok) throw new Error('Failed to delete vehicle');
+                
+                // Update vehicle dropdown
+                await populateVehicleDropdown();
+                
+                // Show success message
+                alert('Vehicle and its maintenance records deleted successfully!');
+                
+            } catch (error) {
+                console.error('Error deleting vehicle:', error);
+                alert('Failed to delete vehicle. Please try again.');
+            }
+        }
+    }
+
+    // Open maintenance entry modal
+    async function openEntryModal(entryId) {
+        // Set modal title based on mode (add or edit)
+        document.getElementById('modal-title').textContent = entryId ? 'Edit Maintenance Entry' : 'Add Maintenance Entry';
+        
+        // Clear form
+        maintenanceForm.reset();
+        document.getElementById('service-description-other').style.display = 'none';
+        
+        if (entryId) {
+            try {
+                // Fetch the log entry from API
+                const response = await fetch(`${API.logs}/${entryId}`);
+                if (!response.ok) throw new Error('Failed to fetch maintenance log');
+                
+                const entry = await response.json();
+                
+                // Populate form with entry data
+                document.getElementById('service-date').value = new Date(entry.date).toISOString().split('T')[0];
+                document.getElementById('service-odometer').value = entry.odometer;
+                
+                // Handle service description
+                const descriptionSelect = document.getElementById('service-description');
+                const descriptionOther = document.getElementById('service-description-other');
+                
+                // Check if the description is in the predefined options
+                const descriptionOption = Array.from(descriptionSelect.options).find(option => 
+                    option.value && option.value !== 'other' && entry.description.includes(option.value)
+                );
+                
+                if (descriptionOption) {
+                    descriptionSelect.value = descriptionOption.value;
+                    descriptionOther.style.display = 'none';
+                } else {
+                    descriptionSelect.value = 'other';
+                    descriptionOther.value = entry.description;
+                    descriptionOther.style.display = 'block';
+                }
+                
+                document.getElementById('service-provider').value = entry.serviceProvider || '';
+                document.getElementById('service-cost').value = entry.cost || 0;
+                document.getElementById('service-next-due').value = entry.nextServiceDue ? new Date(entry.nextServiceDue).toISOString().split('T')[0] : '';
+                document.getElementById('service-notes').value = entry.notes || '';
+                document.getElementById('entry-id').value = entry._id;
+                
+            } catch (error) {
+                console.error('Error fetching maintenance entry:', error);
+                alert('Failed to load maintenance entry. Please try again.');
+                closeEntryModal();
+                return;
+            }
+        } else {
+            // Set default values for a new entry
+            document.getElementById('service-date').value = new Date().toISOString().split('T')[0];
+            
+            try {
+                // Get the current vehicle data
+                const response = await fetch(`${API.vehicles}/${currentVehicleId}`);
+                if (response.ok) {
+                    const vehicle = await response.json();
+                    document.getElementById('service-odometer').value = vehicle.currentMileage || 0;
+                }
+            } catch (error) {
+                console.error('Error fetching vehicle mileage:', error);
+                // Continue without setting mileage
+            }
+            
+            document.getElementById('entry-id').value = '';
+        }
+        
+        // Show modal
+        entryModal.style.display = 'block';
+    }
+
+    // Close maintenance entry modal
+    function closeEntryModal() {
+        entryModal.style.display = 'none';
+    }
+
+    // Save maintenance entry
+    async function saveMaintenanceEntry() {
+        const entryId = document.getElementById('entry-id').value;
+        const vehicleId = currentVehicleId;
+        
+        if (!vehicleId) {
+            alert('Please select a vehicle first.');
+            closeEntryModal();
+            return;
+        }
+        
+        const serviceDate = document.getElementById('service-date').value;
+        const serviceOdometer = document.getElementById('service-odometer').value;
+        
+        // Get the service description (handle 'other' option)
+        let serviceDescription = document.getElementById('service-description').value;
+        if (serviceDescription === 'other') {
+            serviceDescription = document.getElementById('service-description-other').value;
+        }
+        
+        if (!serviceDescription) {
+            alert('Please enter a service description.');
+            return;
+        }
+        
+        const serviceProvider = document.getElementById('service-provider').value;
+        const serviceCost = document.getElementById('service-cost').value || 0;
+        const serviceNextDue = document.getElementById('service-next-due').value;
+        const serviceNotes = document.getElementById('service-notes').value;
+        
+        // Prepare log data
+        const logData = {
+            vehicleId: vehicleId,
+            date: serviceDate,
+            description: serviceDescription,
+            odometer: parseInt(serviceOdometer),
+            serviceProvider: serviceProvider,
+            cost: parseFloat(serviceCost),
+            nextServiceDue: serviceNextDue,
+            notes: serviceNotes
+        };
+        
+        try {
+            let response;
+            
+            if (entryId) {
+                // Update existing entry
+                response = await fetch(`${API.logs}/${entryId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(logData)
+                });
+            } else {
+                // Create new entry
+                response = await fetch(API.logs, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(logData)
+                });
+            }
+            
+            if (!response.ok) throw new Error('Failed to save maintenance entry');
+            
+            // Refresh vehicle and maintenance logs
+            await displayVehicleInfo(vehicleId);
+            await displayMaintenanceLogs(vehicleId);
+            
+            // Close modal
+            closeEntryModal();
+            
+            // Show success message
+            alert(entryId ? 'Maintenance entry updated successfully!' : 'Maintenance entry added successfully!');
+            
+        } catch (error) {
+            console.error('Error saving maintenance entry:', error);
+            alert('Failed to save maintenance entry. Please try again.');
+        }
+    }
+
+    // Delete maintenance entry
+    async function deleteMaintenanceEntry(entryId) {
+        if (confirm('Are you sure you want to delete this maintenance record? This action cannot be undone.')) {
+            try {
+                // Delete entry via API
+                const response = await fetch(`${API.logs}/${entryId}`, {
+                    method: 'DELETE'
+                });
+                
+                if (!response.ok) throw new Error('Failed to delete maintenance entry');
+                
+                // Refresh vehicle and maintenance logs
+                await displayVehicleInfo(currentVehicleId);
+                await displayMaintenanceLogs(currentVehicleId);
+                
+                // Show success message
+                alert('Maintenance record deleted successfully!');
+                
+            } catch (error) {
+                console.error('Error deleting maintenance entry:', error);
+                alert('Failed to delete maintenance record. Please try again.');
+            }
+        }
+    }
+
+    // Open vehicle modal
+    function openVehicleModal(vehicleId) {
+        // Set modal title
+        document.getElementById('vehicle-modal-title').textContent = vehicleId ? 'Edit Vehicle' : 'Add New Vehicle';
+        
+        // Clear form
+        newVehicleForm.reset();
+        
+        if (vehicleId) {
+            // This would be for editing an existing vehicle, but we're handling that differently
+            // through the main vehicle form
+            document.getElementById('edit-vehicle-id').value = vehicleId;
+        } else {
+            // Set default values for new vehicle
+            document.getElementById('new-vehicle-year').value = new Date().getFullYear();
+            document.getElementById('edit-vehicle-id').value = '';
+        }
+        
+        // Show modal
+        vehicleModal.style.display = 'block';
+    }
+
+    // Close vehicle modal
+    function closeVehicleModal() {
+        vehicleModal.style.display = 'none';
+    }
+
+    // Save vehicle from the modal (for new vehicles)
+    async function saveVehicle() {
+        try {
+            const vehicleId = document.getElementById('edit-vehicle-id').value;
+            const year = parseInt(document.getElementById('new-vehicle-year').value);
+            const make = document.getElementById('new-vehicle-make').value;
+            const model = document.getElementById('new-vehicle-model').value;
+            const plate = document.getElementById('new-vehicle-plate').value;
+            const status = document.getElementById('new-vehicle-status').value;
+            
+            // Validation
+            if (!year || !make || !model || !plate) {
+                alert('Please fill out all required fields.');
+                return;
+            }
+            
+            // Prepare vehicle data
+            const vehicleData = {
+                year: year,
+                make: make,
+                model: model,
+                plate: plate,
+                status: status,
+                fuelType: "regular",
+                tankCapacity: 0,
+                location: "",
+                acquisitionDate: new Date().toISOString().split('T')[0],
+                currentMileage: 0
+            };
+            
+            // Create new vehicle via API
+            const response = await fetch(API.vehicles, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(vehicleData)
+            });
+            
+            if (!response.ok) throw new Error('Failed to create vehicle');
+            
+            const newVehicle = await response.json();
+            
+            // Update vehicle dropdown
+            await populateVehicleDropdown();
+            
+            // Select the new vehicle
+            vehicleSelect.value = newVehicle._id;
+            currentVehicleId = newVehicle._id;
+            await displayVehicleInfo(newVehicle._id);
+            await displayMaintenanceLogs(newVehicle._id);
+            
+            // Close modal
+            closeVehicleModal();
+            
+            // Show success message
+            alert('Vehicle added successfully!');
+            
+        } catch (error) {
+            console.error('Error saving vehicle:', error);
+            alert('Failed to save vehicle. Please try again.');
+        }
+    }
+});
+
+// Road Tax Functionality
+document.getElementById('add-tax-entry').addEventListener('click', function() {
+    document.getElementById('tax-modal-title').textContent = 'Add Road Tax Entry';
+    document.getElementById('tax-entry-id').value = '';
+    document.getElementById('road-tax-form').reset();
+    document.getElementById('tax-modal').style.display = 'block';
+});
+
+// Close tax modal
+document.getElementById('cancel-tax').addEventListener('click', function() {
+    document.getElementById('tax-modal').style.display = 'none';
+});
+
+// Form submission for road tax entries
+document.getElementById('road-tax-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const taxData = {
+        id: document.getElementById('tax-id').value,
+        renewalDate: document.getElementById('renewal-date').value,
+        expiryDate: document.getElementById('expiry-date').value
+    };
+    
+    const entryId = document.getElementById('tax-entry-id').value;
+    
+    if (entryId) {
+        updateTaxEntry(entryId, taxData);
+    } else {
+        createTaxEntry(taxData);
+    }
+    
+    document.getElementById('tax-modal').style.display = 'none';
+});
+
+// You'll need to implement these functions similar to your maintenance log functions
+function createTaxEntry(taxData) {
+    // Add to database and update UI
+}
+
+function updateTaxEntry(entryId, taxData) {
+    // Update in database and update UI
+}
+
+function deleteTaxEntry(entryId) {
+    // Delete from database and update UI
+}
