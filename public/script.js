@@ -3,6 +3,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const API = {
         vehicles: '/api/vehicles',
         logs: '/api/logs',
+        taxes: 'api/taxes',
     };
 
     // DOM elements
@@ -13,6 +14,10 @@ document.addEventListener('DOMContentLoaded', function() {
     const cancelEditBtn = document.getElementById('cancel-edit');
     const addLogEntryBtn = document.getElementById('add-log-entry');
     const logEntriesContainer = document.getElementById('log-entries');
+    const taxEntriesContainer = document.getElementById('tax-entries');
+    const addTaxEntryBtn = document.getElementById('add-tax-entry');
+    const taxModal = document.getElementById('tax-modal');
+    const roadTaxForm = document.getElementById('road-tax-form');
     
     // Modals
     const entryModal = document.getElementById('entry-modal');
@@ -134,6 +139,38 @@ document.addEventListener('DOMContentLoaded', function() {
                 vehicleModal.style.display = 'none';
             });
         });
+
+        // Road tax controls
+        addTaxEntryBtn.addEventListener('click', () => openTaxModal());
+        
+        // Road tax form submission
+        roadTaxForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            saveRoadTaxEntry();
+        });
+        document.getElementById('cancel-tax').addEventListener('click', closeTaxModal);
+         
+    // Add event delegation for road tax log actions
+    taxEntriesContainer.addEventListener('click', function(e) {
+        // Check if clicked element or its parent is an edit button
+        const editBtn = e.target.closest('.edit-tax');
+        if (editBtn) {
+            const row = editBtn.closest('tr');
+            const entryId = row.dataset.id;
+            openTaxModal(entryId);
+            return;
+        }
+        
+        // Check if clicked element or its parent is a delete button
+        const deleteBtn = e.target.closest('.delete-tax');
+        if (deleteBtn) {
+            const row = deleteBtn.closest('tr');
+            const entryId = row.dataset.id;
+            deleteRoadTaxEntry(entryId);
+            return;
+        }
+    });
+    
         
         // Service description selection
         document.getElementById('service-description').addEventListener('change', function() {
@@ -169,6 +206,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
         });
+
+        
     }
 
     // Handle vehicle selection change
@@ -186,8 +225,220 @@ document.addEventListener('DOMContentLoaded', function() {
             currentVehicleId = selectedValue;
             await displayVehicleInfo(selectedValue);
             await displayMaintenanceLogs(selectedValue);
+            await displayRoadTaxLogs(selectedValue);
         }
     }
+
+    // Display road tax logs for selected vehicle
+async function displayRoadTaxLogs(vehicleId) {
+    try {
+        // Clear existing tax entries
+        taxEntriesContainer.innerHTML = '';
+        
+        // Fetch taxes from API
+        const response = await fetch(`${API.vehicles}/${vehicleId}/taxes`);
+        if (!response.ok) throw new Error('Failed to fetch road tax logs');
+        
+        const taxes = await response.json();
+        
+        // Generate tax entries
+        if (taxes.length > 0) {
+            taxes.forEach(tax => {
+                const row = document.createElement('tr');
+                row.dataset.id = tax._id;
+                
+                row.innerHTML = `
+                    <td>${tax.taxId}</td>
+                    <td>${new Date(tax.renewalDate).toISOString().split('T')[0]}</td>
+                    <td>${new Date(tax.expiryDate).toISOString().split('T')[0]}</td>
+                    <td>$${parseFloat(tax.cost || 0).toFixed(2)}</td>
+                    <td>${tax.agent || ''}</td>
+                    <td>
+                        <button class="btn-icon edit-tax" title="Edit">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn-icon delete-tax" title="Delete">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                `;
+                
+                taxEntriesContainer.appendChild(row);
+            });
+        } else {
+            // Show message if no taxes found
+            const row = document.createElement('tr');
+            row.innerHTML = '<td colspan="6" class="text-center">No road tax records found. Add your first entry!</td>';
+            taxEntriesContainer.appendChild(row);
+        }
+        
+    } catch (error) {
+        console.error('Error displaying road tax logs:', error);
+        alert('Failed to load road tax logs. Please try again.');
+        
+        // Show empty state
+        const row = document.createElement('tr');
+        row.innerHTML = '<td colspan="6" class="text-center">Failed to load road tax records.</td>';
+        taxEntriesContainer.appendChild(row);
+    }
+}
+
+// Open road tax entry modal
+async function openTaxModal(entryId) {
+    // Set modal title based on mode (add or edit)
+    document.getElementById('tax-modal-title').textContent = entryId ? 'Edit Road Tax Entry' : 'Add Road Tax Entry';
+    
+    // Clear form
+    roadTaxForm.reset();
+    
+    if (entryId) {
+        try {
+            // Fetch the tax entry from API
+            const response = await fetch(`${API.taxes}/${entryId}`);
+            if (!response.ok) throw new Error('Failed to fetch road tax entry');
+            
+            const entry = await response.json();
+            
+            // Populate form with entry data
+            document.getElementById('tax-id').value = entry.taxId;
+            document.getElementById('renewal-date').value = new Date(entry.renewalDate).toISOString().split('T')[0];
+            document.getElementById('expiry-date').value = new Date(entry.expiryDate).toISOString().split('T')[0];
+            document.getElementById('tax-cost').value = entry.cost || 0;
+            document.getElementById('tax-agent').value = entry.agent || '';
+            document.getElementById('tax-notes').value = entry.notes || '';
+            document.getElementById('tax-entry-id').value = entry._id;
+            
+        } catch (error) {
+            console.error('Error fetching road tax entry:', error);
+            alert('Failed to load road tax entry. Please try again.');
+            closeTaxModal();
+            return;
+        }
+    } else {
+        // Set default values for a new entry
+        document.getElementById('renewal-date').value = new Date().toISOString().split('T')[0];
+        
+        // Calculate default expiry date (1 year from now)
+        const expiryDate = new Date();
+        expiryDate.setFullYear(expiryDate.getFullYear() + 1);
+        document.getElementById('expiry-date').value = expiryDate.toISOString().split('T')[0];
+        
+        document.getElementById('tax-entry-id').value = '';
+    }
+    
+    // Show modal
+    taxModal.style.display = 'block';
+}
+
+// Close road tax entry modal
+function closeTaxModal() {
+    taxModal.style.display = 'none';
+}
+
+// Save road tax entry
+async function saveRoadTaxEntry() {
+    const entryId = document.getElementById('tax-entry-id').value;
+    const vehicleId = currentVehicleId;
+    
+    if (!vehicleId) {
+        alert('Please select a vehicle first.');
+        closeTaxModal();
+        return;
+    }
+    
+    const taxId = document.getElementById('tax-id').value;
+    const renewalDate = document.getElementById('renewal-date').value;
+    const expiryDate = document.getElementById('expiry-date').value;
+    const taxCost = document.getElementById('tax-cost').value || 0;
+    const taxAgent = document.getElementById('tax-agent').value;
+    const taxNotes = document.getElementById('tax-notes').value;
+    
+    if (!taxId || !renewalDate || !expiryDate) {
+        alert('Please fill out all required fields.');
+        return;
+    }
+    
+    // Prepare tax data
+    const taxData = {
+        vehicleId: vehicleId,
+        taxId: taxId,
+        renewalDate: renewalDate,
+        expiryDate: expiryDate,
+        cost: parseFloat(taxCost),
+        agent: taxAgent,
+        notes: taxNotes
+    };
+    
+    try {
+        let response;
+        
+        if (entryId) {
+            // Update existing entry
+            response = await fetch(`${API.taxes}/${entryId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(taxData)
+            });
+        } else {
+            // Create new entry
+            response = await fetch(API.taxes, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(taxData)
+            });
+        }
+        
+        if (!response.ok) throw new Error('Failed to save road tax entry');
+        
+        // Refresh tax logs
+        await displayRoadTaxLogs(vehicleId);
+        
+        // Close modal
+        closeTaxModal();
+        
+        // Show success message
+        alert(entryId ? 'Road tax entry updated successfully!' : 'Road tax entry added successfully!');
+        
+    } catch (error) {
+        console.error('Error saving road tax entry:', error);
+        alert('Failed to save road tax entry. Please try again.');
+    }
+}
+
+// Delete road tax entry
+async function deleteRoadTaxEntry(entryId) {
+    if (confirm('Are you sure you want to delete this road tax record? This action cannot be undone.')) {
+        try {
+            // Delete entry via API
+            const response = await fetch(`${API.taxes}/${entryId}`, {
+                method: 'DELETE'
+            });
+            
+            if (!response.ok) throw new Error('Failed to delete road tax entry');
+            
+            // Refresh road tax logs
+            await displayRoadTaxLogs(currentVehicleId);
+            
+            // Show success message
+            alert('Road tax record deleted successfully!');
+            
+        } catch (error) {
+            console.error('Error deleting road tax entry:', error);
+            alert('Failed to delete road tax record. Please try again.');
+        }
+    }
+}
+
+// IMPORTANT: Replace the incomplete deleteTaxEntry function at the end of script.js with this:
+function deleteTaxEntry(entryId) {
+    if (confirm('Are you sure you want to delete this road tax record? This action cannot be undone.')) {
+        deleteRoadTaxEntry(entryId);
+    }
+}
 
     // Display vehicle information
     async function displayVehicleInfo(vehicleId) {

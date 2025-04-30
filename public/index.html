@@ -292,8 +292,93 @@
                 </div>
             </div>
         </div>
+
+        <!-- Road Tax -->
+        <div class="card road-tax-log">
+            <div class="card-header">
+                <h2><i class="fas fa-receipt"></i> Road Tax Log</h2>
+                <button id="add-tax-entry" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Add Entry
+                </button>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table id="road-tax-table">
+                        <thead>
+                            <tr>
+                                <th>Tax ID</th>
+                                <th>Renewal Date</th>
+                                <th>Expiry Date</th>
+                                <th>Cost</th>
+                                <th>Agent</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tax-entries">
+                            <!-- Entries will be added here dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Add/Edit Road Tax Modal -->
+        <div id="tax-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 id="tax-modal-title">Add Road Tax Entry</h3>
+                    <span class="close">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <form id="road-tax-form">
+                        <div class="form-group">
+                            <label for="tax-id">Road Tax ID:</label>
+                            <input type="text" id="tax-id" class="form-control" required>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="renewal-date">Renewal Date:</label>
+                                <input type="date" id="renewal-date" class="form-control" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="expiry-date">Expiry Date:</label>
+                                <input type="date" id="expiry-date" class="form-control" required>
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="tax-cost">Cost:</label>
+                                <div class="input-with-unit">
+                                    <span class="unit">$</span>
+                                    <input type="number" step="0.01" id="tax-cost" class="form-control" required>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="tax-agent">Agent:</label>
+                                <input type="text" id="tax-agent" class="form-control">
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="tax-notes">Notes:</label>
+                            <textarea id="tax-notes" class="form-control" rows="3"></textarea>
+                        </div>
+                        
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-success">Save Entry</button>
+                            <button type="button" class="btn btn-secondary" id="cancel-tax">Cancel</button>
+                        </div>
+                        <input type="hidden" id="tax-entry-id" value="">
+                    </form>
+                </div>
+            </div>
+        </div>
+        
     </div>
 
     <script src="script.js"></script>
 </body>
 </html>
+

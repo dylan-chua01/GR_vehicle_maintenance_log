@@ -55,10 +55,27 @@ const maintenanceLogSchema = new mongoose.Schema({
     createdAt: { type: Date, default: Date.now }
 });
 
+//road tax schema
+const roadTaxSchema = new mongoose.Schema({
+    vehicleId: { 
+        type: mongoose.Schema.Types.ObjectId, 
+        ref: 'Vehicle',
+        required: true
+    },
+    taxId: { type: String, required: true },
+    renewalDate: { type: Date, required: true },
+    expiryDate: { type: Date, required: true },
+    cost: { type: Number, required: true },
+    agent: String,
+    notes: String,
+    createdAt: { type: Date, default: Date.now }
+});
+
 
 // Create models
 const Vehicle = mongoose.model('Vehicle', vehicleSchema);
 const MaintenanceLog = mongoose.model('MaintenanceLog', maintenanceLogSchema);
+const RoadTax = mongoose.model('RoadTax', roadTaxSchema);
 
 // API Routes
 
@@ -257,7 +274,84 @@ app.delete('/api/logs/:id', async (req, res) => {
     }
 });
 
+// GET road tax logs for a vehicle
+app.get('/api/vehicles/:id/taxes', async (req, res) => {
+    try {
+        const taxes = await RoadTax.find({ 
+            vehicleId: req.params.id 
+        }).sort({ expiryDate: -1 });
+        
+        res.json(taxes);
+    } catch (error) {
+        console.error('Error fetching road tax logs:', error);
+        res.status(500).json({ message: 'Failed to fetch road tax logs' });
+    }
+});
 
+// GET a specific road tax entry
+app.get('/api/taxes/:id', async (req, res) => {
+    try {
+        const tax = await RoadTax.findById(req.params.id);
+        
+        if (!tax) {
+            return res.status(404).json({ message: 'Road tax entry not found' });
+        }
+        
+        res.json(tax);
+    } catch (error) {
+        console.error('Error fetching road tax entry:', error);
+        res.status(500).json({ message: 'Failed to fetch road tax entry' });
+    }
+});
+
+// POST a new road tax entry
+app.post('/api/taxes', async (req, res) => {
+    try {
+        const newTax = new RoadTax(req.body);
+        const savedTax = await newTax.save();
+        
+        res.status(201).json(savedTax);
+    } catch (error) {
+        console.error('Error adding road tax entry:', error);
+        res.status(500).json({ message: 'Failed to add road tax entry' });
+    }
+});
+
+// PUT (update) a road tax entry
+app.put('/api/taxes/:id', async (req, res) => {
+    try {
+        const updatedTax = await RoadTax.findByIdAndUpdate(
+            req.params.id,
+            req.body,
+            { new: true, runValidators: true }
+        );
+        
+        if (!updatedTax) {
+            return res.status(404).json({ message: 'Road tax entry not found' });
+        }
+        
+        res.json(updatedTax);
+    } catch (error) {
+        console.error('Error updating road tax entry:', error);
+        res.status(500).json({ message: 'Failed to update road tax entry' });
+    }
+});
+
+// DELETE a road tax entry
+app.delete('/api/taxes/:id', async (req, res) => {
+    try {
+        const deletedTax = await RoadTax.findByIdAndDelete(req.params.id);
+        
+        if (!deletedTax) {
+            return res.status(404).json({ message: 'Road tax entry not found' });
+        }
+        
+        res.json({ message: 'Road tax entry deleted successfully' });
+    } catch (error) {
+        console.error('Error deleting road tax entry:', error);
+        res.status(500).json({ message: 'Failed to delete road tax entry' });
+    }
+});
 
 // Serve the main HTML file for all routes (for SPA behavior)
 app.get('*', (req, res) => {
