@@ -204,7 +204,7 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('input-plate').value = vehicle.plate || '';
             document.getElementById('input-status').value = vehicle.status || 'active';
             document.getElementById('input-fuel-type').value = vehicle.fuelType || 'regular';
-            document.getElementById('input-tank-capacity').value = vehicle.tankCapacity || '';
+
             document.getElementById('input-location').value = vehicle.location || '';
             document.getElementById('input-acquisition-date').value = vehicle.acquisitionDate ? new Date(vehicle.acquisitionDate).toISOString().split('T')[0] : '';
             
@@ -309,7 +309,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 plate: document.getElementById('input-plate').value,
                 status: document.getElementById('input-status').value,
                 fuelType: document.getElementById('input-fuel-type').value,
-                tankCapacity: parseFloat(document.getElementById('input-tank-capacity').value) || 0,
+                
                 location: document.getElementById('input-location').value,
                 acquisitionDate: document.getElementById('input-acquisition-date').value,
                 currentMileage: parseInt(document.getElementById('input-mileage').value) || 0,
@@ -641,7 +641,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 plate: plate,
                 status: status,
                 fuelType: "regular",
-                tankCapacity: 0,
+                
                 location: "",
                 acquisitionDate: new Date().toISOString().split('T')[0],
                 currentMileage: 0
@@ -682,48 +682,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// Road Tax Functionality
-document.getElementById('add-tax-entry').addEventListener('click', function() {
-    document.getElementById('tax-modal-title').textContent = 'Add Road Tax Entry';
-    document.getElementById('tax-entry-id').value = '';
-    document.getElementById('road-tax-form').reset();
-    document.getElementById('tax-modal').style.display = 'block';
-});
-
-// Close tax modal
-document.getElementById('cancel-tax').addEventListener('click', function() {
-    document.getElementById('tax-modal').style.display = 'none';
-});
-
-// Form submission for road tax entries
-document.getElementById('road-tax-form').addEventListener('submit', function(e) {
-    e.preventDefault();
-    
-    const taxData = {
-        id: document.getElementById('tax-id').value,
-        renewalDate: document.getElementById('renewal-date').value,
-        expiryDate: document.getElementById('expiry-date').value
-    };
-    
-    const entryId = document.getElementById('tax-entry-id').value;
-    
-    if (entryId) {
-        updateTaxEntry(entryId, taxData);
-    } else {
-        createTaxEntry(taxData);
-    }
-    
-    document.getElementById('tax-modal').style.display = 'none';
-});
-
-// You'll need to implement these functions similar to your maintenance log functions
-function createTaxEntry(taxData) {
-    // Add to database and update UI
-}
-
-function updateTaxEntry(entryId, taxData) {
-    // Update in database and update UI
-}
 
 function deleteTaxEntry(entryId) {
     // Delete from database and update UI

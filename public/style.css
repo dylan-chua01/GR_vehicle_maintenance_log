@@ -53,6 +53,11 @@ header {
     overflow: hidden;
 }
 
+#service-next-due {
+    display: none;
+  }
+  
+
 .card-header {
     background-color: var(--primary-light);
     color: var(--text-color);
@@ -110,6 +115,11 @@ header {
     color: var(--warning-color);
     font-weight: bold;
 }
+
+.notice[data-status="overdue"] {
+    color: var(--danger-color);
+}
+
 
 /* Table Styles */
 .table-responsive {
@@ -381,3 +391,4 @@ display: none;
 #road-tax-table tr:nth-child(even) {
     background-color: var(--gray-light);
 }
+
