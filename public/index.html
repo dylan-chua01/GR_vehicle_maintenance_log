@@ -61,6 +61,7 @@
                                 <label for="input-plate">Plate/Reg #:</label>
                                 <input type="text" id="input-plate" class="form-input" value="FLT012" disabled>
                             </div>
+                            
                         </div>
                         <div class="info-group">
                             <div class="info-item">
@@ -80,6 +81,10 @@
                                     <option value="diesel">Diesel</option>
                                     <option value="electric">Electric</option>
                                 </select>
+                            </div>
+                            <div class="info-item">
+                                <label for="input-engine">Engine #:</label>
+                                <input type="text" id="input-engine" class="form-input" value="" disabled>
                             </div>
                            
                         </div>
@@ -266,6 +271,10 @@
                                 <label for="new-vehicle-plate">Plate/Reg #:</label>
                                 <input type="text" id="new-vehicle-plate" class="form-control" required>
                             </div>
+                            <div class="form-group">
+                                <label for="new-vehicle-engine">Engine #:</label>
+                                <input type="text" id="new-vehicle-engine" class="form-control" required>
+                            </div>
                         </div>
 
                         <!-- In the new-vehicle-form in the vehicle-modal -->
@@ -375,10 +384,180 @@
                 </div>
             </div>
         </div>
+        <!-- Fuel Log -->
+<div class="card fuel-log">
+    <div class="card-header">
+        <h2><i class="fas fa-receipt"></i> Fuel Log</h2>
+        <button id="add-fuel-entry" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Add Entry
+        </button>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table id="fuel-table">
+                <thead>
+                    <tr>
+                        <th>Fuel Receipt</th>
+                        <th>Date</th>
+                        <th>Driver</th>
+                        <th>Fuel Cost</th>
+                        <th>Fuel Amount</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="fuel-entries">
+                    <!-- Entries will be added here dynamically -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Add/Edit Fuel Modal -->
+<div id="fuel-modal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="fuel-modal-title">Add Fuel Log</h3>
+            <span class="close">&times;</span>
+        </div>
+        <div class="modal-body">
+            <form id="fuel-form">
+                <div class="form-group">
+                    <label for="fuel-receipt">Fuel Receipt:</label>
+                    <input type="text" id="fuel-receipt" class="form-control" required>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="fuel-date">Date:</label>
+                        <input type="date" id="fuel-date" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="fuel-driver">Driver:</label>
+                        <input type="text" id="fuel-driver" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="fuel-cost">Fuel Cost:</label>
+                        <div class="input-with-unit">
+                            <span class="unit">$</span>
+                            <input type="number" step="0.01" id="fuel-cost" class="form-control" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="fuel-amount">Fuel Amount:</label>
+                        <input type="text" id="fuel-amount" class="form-control" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="fuel-notes">Notes:</label>
+                    <textarea id="fuel-notes" class="form-control" rows="3"></textarea>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-success">Save Entry</button>
+                    <button type="button" class="btn btn-secondary" id="cancel-fuel">Cancel</button>
+                </div>
+                <input type="hidden" id="fuel-entry-id" value="">
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Insurance -->
+<div class="card road-insurance-log">
+    <div class="card-header">
+        <h2><i class="fas fa-receipt"></i> Insurance Log</h2>
+        <button id="add-insurance-entry" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Add Entry
+        </button>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table id="insurance-table">
+                <thead>
+                    <tr>
+                        <th>Insurance ID</th>
+                        <th>Provider</th>
+                        <th>Renewal Date</th>
+                        <th>Expiry Date</th>
+                        <th>Cost</th>
+                        <th>Agent</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="insurance-entries">
+                    <!-- Entries will be added here dynamically -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Add/Edit Insurance Modal -->
+<div id="insurance-modal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="insurance-modal-title">Add Insurance Entry</h3>
+            <span class="close">&times;</span>
+        </div>
+        <div class="modal-body">
+            <form id="insurance-form">
+                <div class="form-group">
+                    <label for="insurance-id">Insurance ID:</label>
+                    <input type="text" id="insurance-id" class="form-control" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="insurance-id">Insurance Provider:</label>
+                    <input type="text" id="insurance-provider" class="form-control" required>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="renewal-date">Renewal Date:</label>
+                        <input type="date" id="insurance-renewal-date" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="expiry-date">Expiry Date:</label>
+                        <input type="date" id="insurance-expiry-date" class="form-control" required>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="insurance-cost">Cost:</label>
+                        <div class="input-with-unit">
+                            <span class="unit">$</span>
+                            <input type="number" step="0.01" id="insurance-cost" class="form-control" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="insurance-agent">Agent:</label>
+                        <input type="text" id="insurance-agent" class="form-control">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="insurance-notes">Notes:</label>
+                    <textarea id="insurance-notes" class="form-control" rows="3"></textarea>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-success">Save Entry</button>
+                    <button type="button" class="btn btn-secondary" id="cancel-insurance">Cancel</button>
+                </div>
+                <input type="hidden" id="insurance-entry-id" value="">
+            </form>
+        </div>
+    </div>
         
     </div>
 
     <script src="script.js"></script>
 </body>
 </html>
+
+
+
 

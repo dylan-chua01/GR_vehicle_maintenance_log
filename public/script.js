@@ -4,6 +4,8 @@ document.addEventListener('DOMContentLoaded', function() {
         vehicles: '/api/vehicles',
         logs: '/api/logs',
         taxes: 'api/taxes',
+        fuel: '/api/fuel',
+        insurance: '/api/insurance',
     };
 
     // DOM elements
@@ -18,6 +20,32 @@ document.addEventListener('DOMContentLoaded', function() {
     const addTaxEntryBtn = document.getElementById('add-tax-entry');
     const taxModal = document.getElementById('tax-modal');
     const roadTaxForm = document.getElementById('road-tax-form');
+
+    //fuel DOM elements
+    const fuelEntriesContainer = document.getElementById('fuel-entries');
+    const addFuelEntryBtn = document.getElementById('add-fuel-entry');
+    const fuelModal = document.getElementById('fuel-modal');
+    const fuelForm = document.getElementById('fuel-form');
+    const cancelFuelBtn = document.getElementById('cancel-fuel');
+    const fuelModalTitle = document.getElementById('fuel-modal-title');
+    const fuelDateInput = document.getElementById('fuel-date');
+    const fuelEntryIdInput = document.getElementById('fuel-entry-id');
+    const fuelReceiptInput = document.getElementById('fuel-receipt');
+    const fuelDriverInput = document.getElementById('fuel-driver');
+    const fuelCostInput = document.getElementById('fuel-cost');
+    const fuelAmountInput = document.getElementById('fuel-amount');
+    const fuelNotesInput = document.getElementById('fuel-notes');
+
+    //insurance DOM elements
+    const insuranceEntriesContainer = document.getElementById('insurance-entries');
+    const addInsuranceEntryBtn = document.getElementById('add-insurance-entry');
+    const insuranceModal = document.getElementById('insurance-modal');
+    const insuranceForm = document.getElementById('insurance-form');
+    const cancelInsuranceBtn = document.getElementById('cancel-insurance');
+    const insuranceModalTitle = document.getElementById('insurance-modal-title');
+    
+    
+
     
     // Modals
     const entryModal = document.getElementById('entry-modal');
@@ -92,7 +120,7 @@ document.addEventListener('DOMContentLoaded', function() {
             vehicles.forEach(vehicle => {
                 const option = document.createElement('option');
                 option.value = vehicle._id;
-                option.textContent = `${vehicle.year} ${vehicle.make} ${vehicle.model} (${vehicle.plate})`;
+                option.textContent = `${vehicle.year} ${vehicle.make} ${vehicle.model} ${vehicle.engine} (${vehicle.plate})`;
                 vehicleSelect.appendChild(option);
             });
             
@@ -102,6 +130,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 currentVehicleId = vehicles[0]._id;
                 await displayVehicleInfo(vehicles[0]._id);
                 await displayMaintenanceLogs(vehicles[0]._id);
+                await displayFuelLogs(vehicles[0]._id);
+                await displayRoadTaxLogs(vehicles[0]._id);
+                await displayInsuranceLogs(vehicles[0]._id);
             }
             
             console.log("Vehicle dropdown populated with", vehicleSelect.options.length, "options");
@@ -170,7 +201,60 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
     });
+
+        // Fuel log controls
+        addFuelEntryBtn.addEventListener('click', () => openFuelModal());
+    fuelForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        saveFuelEntry();
+    });
+    cancelFuelBtn.addEventListener('click', closeFuelModal);
+
+    // Event delegation for fuel log actions
+    fuelEntriesContainer.addEventListener('click', function(e) {
+        const editBtn = e.target.closest('.edit-fuel');
+        if (editBtn) {
+            const row = editBtn.closest('tr');
+            const entryId = row.dataset.id;
+            openFuelModal(entryId);
+            return;
+        }
+        
+        const deleteBtn = e.target.closest('.delete-fuel');
+        if (deleteBtn) {
+            const row = deleteBtn.closest('tr');
+            const entryId = row.dataset.id;
+            deleteFuelEntry(entryId);
+            return;
+        }
+    });
     
+        //insurance
+        addInsuranceEntryBtn.addEventListener('click', () => openInsuranceModal());
+        insuranceForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            saveInsuranceEntry();
+        });
+        cancelInsuranceBtn.addEventListener('click', closeInsuranceModal);
+
+        // Add event delegation for insurance log actions
+        insuranceEntriesContainer.addEventListener('click', function(e) {
+        const editBtn = e.target.closest('.edit-insurance');
+        if (editBtn) {
+            const row = editBtn.closest('tr');
+            const entryId = row.dataset.id;
+            openInsuranceModal(entryId);
+            return;
+        }
+        
+        const deleteBtn = e.target.closest('.delete-insurance');
+        if (deleteBtn) {
+            const row = deleteBtn.closest('tr');
+            const entryId = row.dataset.id;
+            deleteInsuranceEntry(entryId);
+            return;
+        }
+    });
         
         // Service description selection
         document.getElementById('service-description').addEventListener('change', function() {
@@ -226,11 +310,13 @@ document.addEventListener('DOMContentLoaded', function() {
             await displayVehicleInfo(selectedValue);
             await displayMaintenanceLogs(selectedValue);
             await displayRoadTaxLogs(selectedValue);
+            await displayFuelLogs(selectedValue);
+            await displayInsuranceLogs(selectedValue);
         }
     }
 
     // Display road tax logs for selected vehicle
-async function displayRoadTaxLogs(vehicleId) {
+    async function displayRoadTaxLogs(vehicleId) {
     try {
         // Clear existing tax entries
         taxEntriesContainer.innerHTML = '';
@@ -328,6 +414,175 @@ async function openTaxModal(entryId) {
     
     // Show modal
     taxModal.style.display = 'block';
+}
+
+//open fuel entry
+async function openFuelModal(entryId) {
+    fuelModalTitle.textContent = entryId ? 'Edit Fuel Entry' : 'Add Fuel Entry';
+    fuelForm.reset();
+
+    if (entryId) {
+        try {
+            const response = await fetch(`${API.fuel}/${entryId}`);
+            if (!response.ok) throw new Error('Failed to fetch fuel entry');
+            
+            const entry = await response.json();
+            
+            // Populate form
+            fuelReceiptInput.value = entry.receiptNumber || '';
+            fuelDateInput.value = new Date(entry.date).toISOString().split('T')[0];
+            fuelDriverInput.value = entry.driver || '';
+            fuelCostInput.value = entry.cost || 0;
+            fuelAmountInput.value = entry.amount || '';
+            fuelNotesInput.value = entry.notes || '';
+            fuelEntryIdInput.value = entry._id;
+            
+        } catch (error) {
+            console.error('Error fetching fuel entry:', error);
+            alert('Failed to load fuel entry. Please try again.');
+            closeFuelModal();
+            return;
+        }
+    } else {
+        // Set default values for new entry
+        fuelDateInput.value = new Date().toISOString().split('T')[0];
+        fuelEntryIdInput.value = '';
+    }
+    
+    fuelModal.style.display = 'block';
+}
+
+// Close fuel modal
+function closeFuelModal() {
+    fuelModal.style.display = 'none';
+}
+
+// Save fuel entry
+async function saveFuelEntry() {
+    const entryId = fuelEntryIdInput.value;
+    const vehicleId = currentVehicleId;
+    
+    if (!vehicleId) {
+        alert('Please select a vehicle first.');
+        closeFuelModal();
+        return;
+    }
+    
+    const fuelData = {
+        vehicleId: vehicleId,
+        receiptNumber: fuelReceiptInput.value,
+        date: fuelDateInput.value,
+        driver: fuelDriverInput.value,
+        cost: parseFloat(fuelCostInput.value) || 0,
+        amount: fuelAmountInput.value,
+        notes: fuelNotesInput.value
+    };
+    
+    if (!fuelData.receiptNumber || !fuelData.date || !fuelData.driver) {
+        alert('Please fill out all required fields.');
+        return;
+    }
+    
+    try {
+        let response;
+        
+        if (entryId) {
+            // Update existing entry
+            response = await fetch(`${API.fuel}/${entryId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(fuelData)
+            });
+        } else {
+            // Create new entry
+            response = await fetch(API.fuel, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(fuelData)
+            });
+        }
+        
+        if (!response.ok) throw new Error('Failed to save fuel entry');
+        
+        await displayFuelLogs(vehicleId);
+        closeFuelModal();
+        alert(entryId ? 'Fuel entry updated successfully!' : 'Fuel entry added successfully!');
+        
+    } catch (error) {
+        console.error('Error saving fuel entry:', error);
+        alert('Failed to save fuel entry. Please try again.');
+    }
+}
+
+// Display fuel logs
+async function displayFuelLogs(vehicleId) {
+    try {
+        fuelEntriesContainer.innerHTML = '';
+        
+        const response = await fetch(`${API.vehicles}/${vehicleId}/fuel`);
+        if (!response.ok) throw new Error('Failed to fetch fuel logs');
+        
+        const fuelLogs = await response.json();
+        
+        if (fuelLogs.length > 0) {
+            fuelLogs.forEach(log => {
+                const row = document.createElement('tr');
+                row.dataset.id = log._id;
+                
+                row.innerHTML = `
+                    <td>${log.receiptNumber || ''}</td>
+                    <td>${new Date(log.date).toISOString().split('T')[0]}</td>
+                    <td>${log.driver || ''}</td>
+                    <td>$${parseFloat(log.cost || 0).toFixed(2)}</td>
+                    <td>${log.amount || ''}</td>
+                    <td>
+                        <button class="btn-icon edit-fuel" title="Edit">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn-icon delete-fuel" title="Delete">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                `;
+                
+                fuelEntriesContainer.appendChild(row);
+            });
+        } else {
+            const row = document.createElement('tr');
+            row.innerHTML = '<td colspan="6" class="text-center">No fuel records found. Add your first entry!</td>';
+            fuelEntriesContainer.appendChild(row);
+        }
+        
+    } catch (error) {
+        console.error('Error displaying fuel logs:', error);
+        const row = document.createElement('tr');
+        row.innerHTML = '<td colspan="6" class="text-center">Failed to load fuel records.</td>';
+        fuelEntriesContainer.appendChild(row);
+    }
+}
+
+// Delete fuel entry
+async function deleteFuelEntry(entryId) {
+    if (confirm('Are you sure you want to delete this fuel record? This action cannot be undone.')) {
+        try {
+            const response = await fetch(`${API.fuel}/${entryId}`, {
+                method: 'DELETE'
+            });
+            
+            if (!response.ok) throw new Error('Failed to delete fuel entry');
+            
+            await displayFuelLogs(currentVehicleId);
+            alert('Fuel record deleted successfully!');
+            
+        } catch (error) {
+            console.error('Error deleting fuel entry:', error);
+            alert('Failed to delete fuel record. Please try again.');
+        }
+    }
 }
 
 // Close road tax entry modal
@@ -453,12 +708,11 @@ function deleteTaxEntry(entryId) {
             document.getElementById('input-brand').value = vehicle.make || '';
             document.getElementById('input-model').value = vehicle.model || '';
             document.getElementById('input-plate').value = vehicle.plate || '';
+            document.getElementById('input-engine').value = vehicle.engine || '';
             document.getElementById('input-status').value = vehicle.status || 'active';
             document.getElementById('input-fuel-type').value = vehicle.fuelType || 'regular';
-
             document.getElementById('input-location').value = vehicle.location || '';
             document.getElementById('input-acquisition-date').value = vehicle.acquisitionDate ? new Date(vehicle.acquisitionDate).toISOString().split('T')[0] : '';
-            
             document.getElementById('input-mileage').value = vehicle.currentMileage || 0;
             document.getElementById('input-last-service').value = vehicle.lastService ? new Date(vehicle.lastService).toISOString().split('T')[0] : '';
             document.getElementById('input-next-service').value = vehicle.nextService ? new Date(vehicle.nextService).toISOString().split('T')[0] : '';
@@ -558,6 +812,7 @@ function deleteTaxEntry(entryId) {
                 make: document.getElementById('input-brand').value,
                 model: document.getElementById('input-model').value,
                 plate: document.getElementById('input-plate').value,
+                engine: document.getElementById('input-engine').value,
                 status: document.getElementById('input-status').value,
                 fuelType: document.getElementById('input-fuel-type').value,
                 
@@ -876,6 +1131,7 @@ function deleteTaxEntry(entryId) {
             const make = document.getElementById('new-vehicle-make').value;
             const model = document.getElementById('new-vehicle-model').value;
             const plate = document.getElementById('new-vehicle-plate').value;
+            const engine = document.getElementById('new-vehicle-engine').value;
             const status = document.getElementById('new-vehicle-status').value;
             
             // Validation
@@ -890,6 +1146,7 @@ function deleteTaxEntry(entryId) {
                 make: make,
                 model: model,
                 plate: plate,
+                engine: engine,
                 status: status,
                 fuelType: "regular",
                 
@@ -931,7 +1188,186 @@ function deleteTaxEntry(entryId) {
             alert('Failed to save vehicle. Please try again.');
         }
     }
+    // Display insurance logs
+async function displayInsuranceLogs(vehicleId) {
+    try {
+        insuranceEntriesContainer.innerHTML = '';
+        
+        const response = await fetch(`${API.vehicles}/${vehicleId}/insurance`);
+        if (!response.ok) throw new Error('Failed to fetch insurance logs');
+        
+        const insuranceLogs = await response.json();
+        
+        if (insuranceLogs.length > 0) {
+            insuranceLogs.forEach(insurance => {
+                const row = document.createElement('tr');
+                row.dataset.id = insurance._id;
+                
+                row.innerHTML = `
+                    <td>${insurance.insuranceId || ''}</td>
+                    <td>${insurance.provider || ''}</td>
+                    <td>${new Date(insurance.renewalDate).toISOString().split('T')[0]}</td>
+                    <td>${new Date(insurance.expiryDate).toISOString().split('T')[0]}</td>
+                    <td>$${parseFloat(insurance.cost || 0).toFixed(2)}</td>
+                    <td>${insurance.agent || ''}</td>
+                    <td>
+                        <button class="btn-icon edit-insurance" title="Edit">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn-icon delete-insurance" title="Delete">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                `;
+                
+                insuranceEntriesContainer.appendChild(row);
+            });
+        } else {
+            const row = document.createElement('tr');
+            row.innerHTML = '<td colspan="7" class="text-center">No insurance records found. Add your first entry!</td>';
+            insuranceEntriesContainer.appendChild(row);
+        }
+        
+    } catch (error) {
+        console.error('Error displaying insurance logs:', error);
+        const row = document.createElement('tr');
+        row.innerHTML = '<td colspan="7" class="text-center">Failed to load insurance records.</td>';
+        insuranceEntriesContainer.appendChild(row);
+    }
+}
+
+// Open insurance modal
+    async function openInsuranceModal(entryId) {
+        insuranceModalTitle.textContent = entryId ? 'Edit Insurance Entry' : 'Add Insurance Entry';
+        insuranceForm.reset();
+    
+        if (entryId) {
+            try {
+                const response = await fetch(`${API.insurance}/${entryId}`);
+                if (!response.ok) throw new Error('Failed to fetch insurance entry');
+                
+                const entry = await response.json();
+                
+                // Populate form
+                document.getElementById('insurance-id').value = entry.insuranceId || '';
+                document.getElementById('insurance-provider').value = entry.provider || '';
+                document.getElementById('insurance-renewal-date').value = new Date(entry.renewalDate).toISOString().split('T')[0];
+                document.getElementById('insurance-expiry-date').value = new Date(entry.expiryDate).toISOString().split('T')[0];
+                document.getElementById('insurance-cost').value = entry.cost || 0;
+                document.getElementById('insurance-agent').value = entry.agent || '';
+                document.getElementById('insurance-notes').value = entry.notes || '';
+                document.getElementById('insurance-entry-id').value = entry._id;
+                
+            } catch (error) {
+                console.error('Error fetching insurance entry:', error);
+                alert('Failed to load insurance entry. Please try again.');
+                closeInsuranceModal();
+                return;
+            }
+        } else {
+            // Set default values for new entry
+            document.getElementById('insurance-renewal-date').value = new Date().toISOString().split('T')[0];
+            
+            // Calculate default expiry date (1 year from now)
+            const expiryDate = new Date();
+            expiryDate.setFullYear(expiryDate.getFullYear() + 1);
+            document.getElementById('insurance-expiry-date').value = expiryDate.toISOString().split('T')[0];
+            
+            document.getElementById('insurance-entry-id').value = '';
+        }
+        
+        insuranceModal.style.display = 'block';
+    }
+
+// Close insurance modal
+function closeInsuranceModal() {
+    insuranceModal.style.display = 'none';
+}
+
+// Save insurance entry
+async function saveInsuranceEntry() {
+    const entryId = document.getElementById('insurance-entry-id').value;
+    const vehicleId = currentVehicleId;
+    
+    if (!vehicleId) {
+        alert('Please select a vehicle first.');
+        closeInsuranceModal();
+        return;
+    }
+    
+    const insuranceData = {
+        vehicleId: vehicleId,
+        insuranceId: document.getElementById('insurance-id').value,
+        provider: document.getElementById('insurance-provider').value,
+        renewalDate: document.getElementById('insurance-renewal-date').value,
+        expiryDate: document.getElementById('insurance-expiry-date').value,
+        cost: parseFloat(document.getElementById('insurance-cost').value) || 0,
+        agent: document.getElementById('insurance-agent').value,
+        notes: document.getElementById('insurance-notes').value
+    };
+    
+    if (!insuranceData.insuranceId || !insuranceData.provider || !insuranceData.renewalDate || !insuranceData.expiryDate) {
+        alert('Please fill out all required fields.');
+        return;
+    }
+    
+    try {
+        let response;
+        
+        if (entryId) {
+            // Update existing entry
+            response = await fetch(`${API.insurance}/${entryId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(insuranceData)
+            });
+        } else {
+            // Create new entry
+            response = await fetch(API.insurance, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(insuranceData)
+            });
+        }
+        
+        if (!response.ok) throw new Error('Failed to save insurance entry');
+        
+        await displayInsuranceLogs(vehicleId);
+        closeInsuranceModal();
+        alert(entryId ? 'Insurance entry updated successfully!' : 'Insurance entry added successfully!');
+        
+    } catch (error) {
+        console.error('Error saving insurance entry:', error);
+        alert('Failed to save insurance entry. Please try again.');
+    }
+}
+
+// Delete insurance entry
+async function deleteInsuranceEntry(entryId) {
+    if (confirm('Are you sure you want to delete this insurance record? This action cannot be undone.')) {
+        try {
+            const response = await fetch(`${API.insurance}/${entryId}`, {
+                method: 'DELETE'
+            });
+            
+            if (!response.ok) throw new Error('Failed to delete insurance entry');
+            
+            await displayInsuranceLogs(currentVehicleId);
+            alert('Insurance record deleted successfully!');
+            
+        } catch (error) {
+            console.error('Error deleting insurance entry:', error);
+            alert('Failed to delete insurance record. Please try again.');
+        }
+    }
+}
 });
+
+
 
 
 function deleteTaxEntry(entryId) {
