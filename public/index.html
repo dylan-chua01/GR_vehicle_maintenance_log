@@ -86,6 +86,10 @@
                                 <label for="input-engine">Engine #:</label>
                                 <input type="text" id="input-engine" class="form-input" value="" disabled>
                             </div>
+                            <div class="info-item">
+                                <label for="input-chasis">Chasis #:</label>
+                                <input type="text" id="input-chasis" class="form-input" value="" disabled>
+                            </div>
                            
                         </div>
                         <div class="info-group">
@@ -274,6 +278,10 @@
                             <div class="form-group">
                                 <label for="new-vehicle-engine">Engine #:</label>
                                 <input type="text" id="new-vehicle-engine" class="form-control" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="new-vehicle-chasis">Chasis #:</label>
+                                <input type="text" id="new-vehicle-chasis" class="form-control" required>
                             </div>
                         </div>
 
@@ -553,6 +561,78 @@
     </div>
         
     </div>
+
+ <!-- Location -->
+ <div class="card location-log">
+    <div class="card-header">
+        <h2><i class="fas fa-receipt"></i> Location Log</h2>
+        <button id="add-location-entry" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Add Entry
+        </button>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table id="location-table">
+                <thead>
+                    <tr>
+                        <th>From Date</th>
+                        <th>To Date</th>
+                        <th>Location</th>
+                        <th>Agent</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="location-entries">
+                    <!-- Entries will be added here dynamically -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Add/Edit Location Modal -->
+<div id="location-modal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="location-modal-title">Add Location Entry</h3>
+            <span class="close">&times;</span>
+        </div>
+        <div class="modal-body">
+            <form id="location-form">
+                <div class="form-group">
+                    <label for="location-from-date">From Date:</label>
+                    <input type="date" id="location-from-date" class="form-control" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="location-to-date">To Date:</label>
+                    <input type="date" id="location-to-date" class="form-control" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="location">Location:</label>
+                    <input type="text" id="location" class="form-control" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="location-agent">Agent:</label>
+                    <input type="text" id="location-agent" class="form-control">
+                </div>
+                
+                <div class="form-group">
+                    <label for="location-notes">Notes:</label>
+                    <textarea id="location-notes" class="form-control" rows="3"></textarea>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-success">Save Entry</button>
+                    <button type="button" class="btn btn-secondary" id="cancel-location">Cancel</button>
+                </div>
+                <input type="hidden" id="location-entry-id" value="">
+            </form>
+        </div>
+        </div>
+        </div>
 
     <script src="script.js"></script>
 </body>

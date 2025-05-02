@@ -28,10 +28,9 @@ const vehicleSchema = new mongoose.Schema({
     model: String,
     plate: { type: String, required: true },
     engine: String,
+    chasis: String,
     status: { type: String, default: 'active' },
     fuelType: String,
-    
-    location: String,
     acquisitionDate: Date,
     currentMileage: { type: Number, default: 0 },
     lastService: Date,
@@ -105,12 +104,28 @@ const insuranceSchema = new mongoose.Schema({
     createdAt: { type: Date, default: Date.now }
 });
 
+// location schema
+const locationSchema = new mongoose.Schema({
+    vehicleId: { 
+        type: mongoose.Schema.Types.ObjectId, 
+        ref: 'Vehicle',
+        required: true
+    },
+    fromDate: { type: Date, required: true },
+    toDate: { type: Date, required: true },
+    location: { type: String, required: true },
+    agent: String,
+    notes: String,
+    createdAt: { type: Date, default: Date.now }
+});
+
 // Create models
 const Vehicle = mongoose.model('Vehicle', vehicleSchema);
 const MaintenanceLog = mongoose.model('MaintenanceLog', maintenanceLogSchema);
 const RoadTax = mongoose.model('RoadTax', roadTaxSchema);
 const FuelLog = mongoose.model('FuelLog', fuelLogSchema);
 const Insurance = mongoose.model('Insurance', insuranceSchema);
+const Location = mongoose.model('Location', locationSchema);
 
 // API Routes
 
@@ -189,7 +204,9 @@ app.delete('/api/vehicles/:id', async (req, res) => {
         await Promise.all([
             MaintenanceLog.deleteMany({ vehicleId: req.params.id }),
             RoadTax.deleteMany({ vehicleId: req.params.id }),
-            FuelLog.deleteMany({ vehicleId: req.params.id })  // Add this line
+            FuelLog.deleteMany({ vehicleId: req.params.id }),
+            Insurance.deleteMany({ vehicleId: req.params.id }),
+            Location.deleteMany({ vehicleId: req.params.id })
         ]);
         
         res.json({ message: 'Vehicle and all associated records deleted successfully' });
@@ -555,9 +572,86 @@ app.delete('/api/insurance/:id', async (req, res) => {
     }
 });
 
-// Serve the main HTML file for all routes (for SPA behavior)
-app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+// GET location logs for a vehicle
+app.get('/api/vehicles/:id/locations', async (req, res) => {
+    try {
+        console.log(`Fetching locations for vehicle ${req.params.id}`);
+        const locations = await Location.find({ 
+            vehicleId: req.params.id 
+        }).sort({ fromDate: -1 });
+        
+        console.log(`Found ${locations.length} location records`);
+        res.json(locations);
+    } catch (error) {
+        console.error('Error:', error);
+        res.status(500).json({ message: 'Failed to fetch location logs' });
+    }
+});
+
+
+// GET a specific location entry
+app.get('/api/locations/:id', async (req, res) => {
+    try {
+        const location = await Location.findById(req.params.id);
+        
+        if (!location) {
+            return res.status(404).json({ message: 'Location entry not found' });
+        }
+        
+        res.json(location);
+    } catch (error) {
+        console.error('Error fetching location entry:', error);
+        res.status(500).json({ message: 'Failed to fetch location entry' });
+    }
+});
+
+// POST a new location entry
+app.post('/api/locations', async (req, res) => {
+    try {
+        const newLocation = new Location(req.body);
+        const savedLocation = await newLocation.save();
+        
+        res.status(201).json(savedLocation);
+    } catch (error) {
+        console.error('Error adding location entry:', error);
+        res.status(500).json({ message: 'Failed to add location entry' });
+    }
+});
+
+// PUT (update) a location entry
+app.put('/api/locations/:id', async (req, res) => {
+    try {
+        const updatedLocation = await Location.findByIdAndUpdate(
+            req.params.id,
+            req.body,
+            { new: true, runValidators: true }
+        );
+        
+        if (!updatedLocation) {
+            return res.status(404).json({ message: 'Location entry not found' });
+        }
+        
+        res.json(updatedLocation);
+    } catch (error) {
+        console.error('Error updating location entry:', error);
+        res.status(500).json({ message: 'Failed to update location entry' });
+    }
+});
+
+// DELETE a location entry
+app.delete('/api/locations/:id', async (req, res) => {
+    try {
+        const deletedLocation = await Location.findByIdAndDelete(req.params.id);
+        
+        if (!deletedLocation) {
+            return res.status(404).json({ message: 'Location entry not found' });
+        }
+        
+        res.json({ message: 'Location entry deleted successfully' });
+    } catch (error) {
+        console.error('Error deleting location entry:', error);
+        res.status(500).json({ message: 'Failed to delete location entry' });
+    }
 });
 
 // Start the server

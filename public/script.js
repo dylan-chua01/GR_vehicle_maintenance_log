@@ -6,6 +6,7 @@ document.addEventListener('DOMContentLoaded', function() {
         taxes: 'api/taxes',
         fuel: '/api/fuel',
         insurance: '/api/insurance',
+        locations: '/api/locations',
     };
 
     // DOM elements
@@ -43,7 +44,14 @@ document.addEventListener('DOMContentLoaded', function() {
     const insuranceForm = document.getElementById('insurance-form');
     const cancelInsuranceBtn = document.getElementById('cancel-insurance');
     const insuranceModalTitle = document.getElementById('insurance-modal-title');
-    
+
+    //location DOM elements
+    const locationEntriesContainer = document.getElementById('location-entries');
+    const addLocationEntryBtn = document.getElementById('add-location-entry');
+    const locationModal = document.getElementById('location-modal');
+    const locationForm = document.getElementById('location-form');
+    const cancelLocationBtn = document.getElementById('cancel-location');
+    const locationModalTitle = document.getElementById('location-modal-title');
     
 
     
@@ -67,6 +75,10 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Show delete vehicle button
             addDeleteVehicleButton();
+
+            if (currentVehicleId) {
+                await displayLocationLogs(currentVehicleId);
+            }
         } catch (error) {
             console.error('Error initializing app:', error);
             alert('There was an error initializing the application. Please try again later.');
@@ -120,7 +132,7 @@ document.addEventListener('DOMContentLoaded', function() {
             vehicles.forEach(vehicle => {
                 const option = document.createElement('option');
                 option.value = vehicle._id;
-                option.textContent = `${vehicle.year} ${vehicle.make} ${vehicle.model} ${vehicle.engine} (${vehicle.plate})`;
+                option.textContent = `${vehicle.year} ${vehicle.make} ${vehicle.model} ${vehicle.engine} ${vehicle.chasis} (${vehicle.plate})`;
                 vehicleSelect.appendChild(option);
             });
             
@@ -255,7 +267,34 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
     });
+
+    //location
+    addLocationEntryBtn.addEventListener('click', () => openLocationModal());
+    locationForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        saveLocationEntry();
+    });
+    cancelLocationBtn.addEventListener('click', closeLocationModal);
+
+    // Add event delegation for location log actions
+    locationEntriesContainer.addEventListener('click', function(e) {
+        const editBtn = e.target.closest('.edit-location');
+        if (editBtn) {
+            const row = editBtn.closest('tr');
+            const entryId = row.dataset.id;
+            openLocationModal(entryId);
+            return;
+        }
         
+        const deleteBtn = e.target.closest('.delete-location');
+        if (deleteBtn) {
+            const row = deleteBtn.closest('tr');
+            const entryId = row.dataset.id;
+            deleteLocationEntry(entryId);
+            return;
+        }
+    });
+
         // Service description selection
         document.getElementById('service-description').addEventListener('change', function() {
             const otherField = document.getElementById('service-description-other');
@@ -312,6 +351,7 @@ document.addEventListener('DOMContentLoaded', function() {
             await displayRoadTaxLogs(selectedValue);
             await displayFuelLogs(selectedValue);
             await displayInsuranceLogs(selectedValue);
+            await displayLocationLogs(selectedValue);
         }
     }
 
@@ -585,6 +625,401 @@ async function deleteFuelEntry(entryId) {
     }
 }
 
+// Display location logs
+async function displayLocationLogs(vehicleId) {
+    try {
+        console.log(`Fetching location logs for vehicle ${vehicleId}`); // Debug
+        locationEntriesContainer.innerHTML = '';
+        
+        const response = await fetch(`${API.vehicles}/${vehicleId}/locations`);
+        if (!response.ok) throw new Error('Failed to fetch location logs');
+        
+        const locations = await response.json();
+        console.log("Location logs data:", locations); // Debug
+        
+        if (locations.length > 0) {
+            locations.forEach(location => {
+                const row = document.createElement('tr');
+                row.dataset.id = location._id;
+                
+                row.innerHTML = `
+                    <td>${new Date(location.fromDate).toISOString().split('T')[0]}</td>
+                    <td>${new Date(location.toDate).toISOString().split('T')[0]}</td>
+                    <td>${location.location || ''}</td>
+                    <td>${location.agent || ''}</td>
+                    <td>
+                        <button class="btn-icon edit-location" title="Edit">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn-icon delete-location" title="Delete">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                `;
+                
+                locationEntriesContainer.appendChild(row);
+            });
+        } else {
+            const row = document.createElement('tr');
+            row.innerHTML = '<td colspan="5" class="text-center">No location records found. Add your first entry!</td>';
+            locationEntriesContainer.appendChild(row);
+        }
+    } catch (error) {
+        console.error('Error displaying location logs:', error);
+        const row = document.createElement('tr');
+        row.innerHTML = '<td colspan="5" class="text-center">Failed to load location records.</td>';
+        locationEntriesContainer.appendChild(row);
+    }
+}
+
+async function openLocationModal(entryId) {
+    locationModalTitle.textContent = entryId ? 'Edit Location Entry' : 'Add Location Entry';
+    locationForm.reset();
+
+    if (entryId) {
+        try {
+            const response = await fetch(`${API.locations}/${entryId}`);
+            if (!response.ok) throw new Error('Failed to fetch location entry');
+            
+            const entry = await response.json();
+            
+            // Populate form
+            document.getElementById('location-from-date').value = new Date(entry.fromDate).toISOString().split('T')[0];
+            document.getElementById('location-to-date').value = new Date(entry.toDate).toISOString().split('T')[0];
+            document.getElementById('location').value = entry.location || '';
+            document.getElementById('location-agent').value = entry.agent || '';
+            document.getElementById('location-notes').value = entry.notes || '';
+            document.getElementById('location-entry-id').value = entry._id;
+            
+        } catch (error) {
+            console.error('Error fetching location entry:', error);
+            alert('Failed to load location entry. Please try again.');
+            closeLocationModal();
+            return;
+        }
+    } else {
+        // Set default values for new entry
+        document.getElementById('location-from-date').value = new Date().toISOString().split('T')[0];
+        document.getElementById('location-entry-id').value = '';
+    }
+    
+    locationModal.style.display = 'block';
+}
+
+function closeLocationModal() {
+    locationModal.style.display = 'none';
+}
+
+async function saveLocationEntry() {
+    const entryId = document.getElementById('location-entry-id').value;
+    const vehicleId = currentVehicleId;
+    
+    if (!vehicleId) {
+        alert('Please select a vehicle first.');
+        closeLocationModal();
+        return;
+    }
+    
+    const locationData = {
+        vehicleId: vehicleId,
+        fromDate: document.getElementById('location-from-date').value,
+        toDate: document.getElementById('location-to-date').value,
+        location: document.getElementById('location').value,
+        agent: document.getElementById('location-agent').value,
+        notes: document.getElementById('location-notes').value
+    };
+    
+    if (!locationData.fromDate || !locationData.toDate || !locationData.location) {
+        alert('Please fill out all required fields.');
+        return;
+    }
+    
+    try {
+        let response;
+        
+        if (entryId) {
+            // Update existing entry
+            response = await fetch(`${API.locations}/${entryId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(locationData)
+            });
+        } else {
+            // Create new entry
+            response = await fetch(API.locations, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(locationData)
+            });
+        }
+        
+        if (!response.ok) throw new Error('Failed to save location entry');
+        
+        await displayLocationLogs(vehicleId);
+        closeLocationModal();
+        alert(entryId ? 'Location entry updated successfully!' : 'Location entry added successfully!');
+        
+    } catch (error) {
+        console.error('Error saving location entry:', error);
+        alert('Failed to save location entry. Please try again.');
+    }
+}
+
+async function deleteLocationEntry(entryId) {
+    if (confirm('Are you sure you want to delete this location record? This action cannot be undone.')) {
+        try {
+            const response = await fetch(`${API.locations}/${entryId}`, {
+                method: 'DELETE'
+            });
+            
+            if (!response.ok) throw new Error('Failed to delete location entry');
+            
+            await displayLocationLogs(currentVehicleId);
+            alert('Location record deleted successfully!');
+            
+        } catch (error) {
+            console.error('Error deleting location entry:', error);
+            alert('Failed to delete location record. Please try again.');
+        }
+    }
+}
+
+async function openLocationModal(entryId) {
+    locationModalTitle.textContent = entryId ? 'Edit Location Entry' : 'Add Location Entry';
+    locationForm.reset();
+
+    if (entryId) {
+        try {
+            const response = await fetch(`${API.locations}/${entryId}`);
+            if (!response.ok) throw new Error('Failed to fetch location entry');
+            
+            const entry = await response.json();
+            
+            // Populate form
+            document.getElementById('location-from-date').value = new Date(entry.fromDate).toISOString().split('T')[0];
+            document.getElementById('location-to-date').value = new Date(entry.toDate).toISOString().split('T')[0];
+            document.getElementById('location').value = entry.location || '';
+            document.getElementById('location-agent').value = entry.agent || '';
+            document.getElementById('location-notes').value = entry.notes || '';
+            document.getElementById('location-entry-id').value = entry._id;
+            
+        } catch (error) {
+            console.error('Error fetching location entry:', error);
+            alert('Failed to load location entry. Please try again.');
+            closeLocationModal();
+            return;
+        }
+    } else {
+        // Set default values for new entry
+        document.getElementById('location-from-date').value = new Date().toISOString().split('T')[0];
+        document.getElementById('location-entry-id').value = '';
+    }
+    
+    locationModal.style.display = 'block';
+}
+
+function closeLocationModal() {
+    locationModal.style.display = 'none';
+}
+
+async function saveLocationEntry() {
+    const entryId = document.getElementById('location-entry-id').value;
+    const vehicleId = currentVehicleId;
+    
+    if (!vehicleId) {
+        alert('Please select a vehicle first.');
+        closeLocationModal();
+        return;
+    }
+    
+    const locationData = {
+        vehicleId: vehicleId,
+        fromDate: document.getElementById('location-from-date').value,
+        toDate: document.getElementById('location-to-date').value,
+        location: document.getElementById('location').value,
+        agent: document.getElementById('location-agent').value,
+        notes: document.getElementById('location-notes').value
+    };
+    
+    if (!locationData.fromDate || !locationData.toDate || !locationData.location) {
+        alert('Please fill out all required fields.');
+        return;
+    }
+    
+    try {
+        let response;
+        
+        if (entryId) {
+            // Update existing entry
+            response = await fetch(`${API.locations}/${entryId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(locationData)
+            });
+        } else {
+            // Create new entry
+            response = await fetch(API.locations, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(locationData)
+            });
+        }
+        
+        if (!response.ok) throw new Error('Failed to save location entry');
+        
+        await displayLocationLogs(vehicleId);
+        closeLocationModal();
+        alert(entryId ? 'Location entry updated successfully!' : 'Location entry added successfully!');
+        
+    } catch (error) {
+        console.error('Error saving location entry:', error);
+        alert('Failed to save location entry. Please try again.');
+    }
+}
+
+async function deleteLocationEntry(entryId) {
+    if (confirm('Are you sure you want to delete this location record? This action cannot be undone.')) {
+        try {
+            const response = await fetch(`${API.locations}/${entryId}`, {
+                method: 'DELETE'
+            });
+            
+            if (!response.ok) throw new Error('Failed to delete location entry');
+            
+            await displayLocationLogs(currentVehicleId);
+            alert('Location record deleted successfully!');
+            
+        } catch (error) {
+            console.error('Error deleting location entry:', error);
+            alert('Failed to delete location record. Please try again.');
+        }
+    }
+}
+
+async function openLocationModal(entryId) {
+    locationModalTitle.textContent = entryId ? 'Edit Location Entry' : 'Add Location Entry';
+    locationForm.reset();
+
+    if (entryId) {
+        try {
+            const response = await fetch(`${API.locations}/${entryId}`);
+            if (!response.ok) throw new Error('Failed to fetch location entry');
+            
+            const entry = await response.json();
+            
+            // Populate form
+            document.getElementById('location-from-date').value = new Date(entry.fromDate).toISOString().split('T')[0];
+            document.getElementById('location-to-date').value = new Date(entry.toDate).toISOString().split('T')[0];
+            document.getElementById('location').value = entry.location || '';
+            document.getElementById('location-agent').value = entry.agent || '';
+            document.getElementById('location-notes').value = entry.notes || '';
+            document.getElementById('location-entry-id').value = entry._id;
+            
+        } catch (error) {
+            console.error('Error fetching location entry:', error);
+            alert('Failed to load location entry. Please try again.');
+            closeLocationModal();
+            return;
+        }
+    } else {
+        // Set default values for new entry
+        document.getElementById('location-from-date').value = new Date().toISOString().split('T')[0];
+        document.getElementById('location-entry-id').value = '';
+    }
+    
+    locationModal.style.display = 'block';
+}
+
+function closeLocationModal() {
+    locationModal.style.display = 'none';
+}
+
+async function saveLocationEntry() {
+    const entryId = document.getElementById('location-entry-id').value;
+    const vehicleId = currentVehicleId;
+    
+    if (!vehicleId) {
+        alert('Please select a vehicle first.');
+        closeLocationModal();
+        return;
+    }
+    
+    const locationData = {
+        vehicleId: vehicleId,
+        fromDate: document.getElementById('location-from-date').value,
+        toDate: document.getElementById('location-to-date').value,
+        location: document.getElementById('location').value,
+        agent: document.getElementById('location-agent').value,
+        notes: document.getElementById('location-notes').value
+    };
+    
+    if (!locationData.fromDate || !locationData.toDate || !locationData.location) {
+        alert('Please fill out all required fields.');
+        return;
+    }
+    
+    try {
+        let response;
+        
+        if (entryId) {
+            // Update existing entry
+            response = await fetch(`${API.locations}/${entryId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(locationData)
+            });
+        } else {
+            // Create new entry
+            response = await fetch(API.locations, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(locationData)
+            });
+        }
+        
+        if (!response.ok) throw new Error('Failed to save location entry');
+        
+        await displayLocationLogs(vehicleId);
+        closeLocationModal();
+        alert(entryId ? 'Location entry updated successfully!' : 'Location entry added successfully!');
+        
+    } catch (error) {
+        console.error('Error saving location entry:', error);
+        alert('Failed to save location entry. Please try again.');
+    }
+}
+
+async function deleteLocationEntry(entryId) {
+    if (confirm('Are you sure you want to delete this location record? This action cannot be undone.')) {
+        try {
+            const response = await fetch(`${API.locations}/${entryId}`, {
+                method: 'DELETE'
+            });
+            
+            if (!response.ok) throw new Error('Failed to delete location entry');
+            
+            await displayLocationLogs(currentVehicleId);
+            alert('Location record deleted successfully!');
+            
+        } catch (error) {
+            console.error('Error deleting location entry:', error);
+            alert('Failed to delete location record. Please try again.');
+        }
+    }
+}
+
 // Close road tax entry modal
 function closeTaxModal() {
     taxModal.style.display = 'none';
@@ -702,6 +1137,16 @@ function deleteTaxEntry(entryId) {
             if (!response.ok) throw new Error('Failed to fetch vehicle information');
             
             const vehicle = await response.json();
+
+            // Helper function to safely set value
+        function setValue(id, value) {
+            const element = document.getElementById(id);
+            if (element) {
+                element.value = value || '';
+            } else {
+                console.warn(`Element with ID ${id} not found`);
+            }
+        }
             
             // Fill in vehicle information
             document.getElementById('input-year').value = vehicle.year || '';
@@ -709,9 +1154,9 @@ function deleteTaxEntry(entryId) {
             document.getElementById('input-model').value = vehicle.model || '';
             document.getElementById('input-plate').value = vehicle.plate || '';
             document.getElementById('input-engine').value = vehicle.engine || '';
+            document.getElementById('input-chasis').value = vehicle.chasis || '';
             document.getElementById('input-status').value = vehicle.status || 'active';
             document.getElementById('input-fuel-type').value = vehicle.fuelType || 'regular';
-            document.getElementById('input-location').value = vehicle.location || '';
             document.getElementById('input-acquisition-date').value = vehicle.acquisitionDate ? new Date(vehicle.acquisitionDate).toISOString().split('T')[0] : '';
             document.getElementById('input-mileage').value = vehicle.currentMileage || 0;
             document.getElementById('input-last-service').value = vehicle.lastService ? new Date(vehicle.lastService).toISOString().split('T')[0] : '';
@@ -813,10 +1258,9 @@ function deleteTaxEntry(entryId) {
                 model: document.getElementById('input-model').value,
                 plate: document.getElementById('input-plate').value,
                 engine: document.getElementById('input-engine').value,
+                chasis: document.getElementById('input-chasis').value,
                 status: document.getElementById('input-status').value,
                 fuelType: document.getElementById('input-fuel-type').value,
-                
-                location: document.getElementById('input-location').value,
                 acquisitionDate: document.getElementById('input-acquisition-date').value,
                 currentMileage: parseInt(document.getElementById('input-mileage').value) || 0,
                 lastService: document.getElementById('input-last-service').value,
@@ -1132,6 +1576,7 @@ function deleteTaxEntry(entryId) {
             const model = document.getElementById('new-vehicle-model').value;
             const plate = document.getElementById('new-vehicle-plate').value;
             const engine = document.getElementById('new-vehicle-engine').value;
+            const chasis = document.getElementById('new-vehicle-chasis').value;
             const status = document.getElementById('new-vehicle-status').value;
             
             // Validation
@@ -1147,10 +1592,9 @@ function deleteTaxEntry(entryId) {
                 model: model,
                 plate: plate,
                 engine: engine,
+                chasis: chasis,
                 status: status,
                 fuelType: "regular",
-                
-                location: "",
                 acquisitionDate: new Date().toISOString().split('T')[0],
                 currentMileage: 0
             };
@@ -1189,7 +1633,7 @@ function deleteTaxEntry(entryId) {
         }
     }
     // Display insurance logs
-async function displayInsuranceLogs(vehicleId) {
+    async function displayInsuranceLogs(vehicleId) {
     try {
         insuranceEntriesContainer.innerHTML = '';
         
@@ -1236,7 +1680,7 @@ async function displayInsuranceLogs(vehicleId) {
     }
 }
 
-// Open insurance modal
+    // Open insurance modal
     async function openInsuranceModal(entryId) {
         insuranceModalTitle.textContent = entryId ? 'Edit Insurance Entry' : 'Add Insurance Entry';
         insuranceForm.reset();
