@@ -1138,6 +1138,16 @@ function deleteTaxEntry(entryId) {
             
             const vehicle = await response.json();
 
+            const taxResponse = await fetch(`${API.vehicles}/${vehicleId}/taxes`);
+            const taxes = taxResponse.ok ? await taxResponse.json() : [];
+            const latestTax = taxes.sort((a, b) => new Date(b.expiryDate) - new Date(a.expiryDate))[0];
+
+            // Fetch latest insurance
+            const insuranceResponse = await fetch(`${API.vehicles}/${vehicleId}/insurance`);
+            const insurances = insuranceResponse.ok ? await insuranceResponse.json() : [];
+            const latestInsurance = insurances.sort((a, b) => new Date(b.expiryDate) - new Date(a.expiryDate))[0];
+
+
             // Helper function to safely set value
         function setValue(id, value) {
             const element = document.getElementById(id);
@@ -1161,6 +1171,9 @@ function deleteTaxEntry(entryId) {
             document.getElementById('input-mileage').value = vehicle.currentMileage || 0;
             document.getElementById('input-last-service').value = vehicle.lastService ? new Date(vehicle.lastService).toISOString().split('T')[0] : '';
             document.getElementById('input-next-service').value = vehicle.nextService ? new Date(vehicle.nextService).toISOString().split('T')[0] : '';
+            //latest tax and insurance
+            document.getElementById('input-latest-tax').value = latestTax?.taxId || 'None';
+            document.getElementById('input-latest-insurance').value = latestInsurance?.insuranceId || 'None';
             
         } catch (error) {
             console.error('Error displaying vehicle info:', error);
