@@ -9,7 +9,7 @@ const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(bodyParser.json());
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname)));
 
 // MongoDB Connection
 const MONGODB_URI = process.env.MONGODB_URI;
@@ -654,7 +654,13 @@ app.delete('/api/locations/:id', async (req, res) => {
     }
 });
 
-// Start the server
-app.listen(PORT, () => {
+
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));  // Changed path
+  });
+  
+  // Start the server
+  app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
-});
+    console.log(`Access the app at: http://localhost:${PORT}`);
+  });
