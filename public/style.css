@@ -392,3 +392,114 @@ display: none;
     background-color: var(--gray-light);
 }
 
+/* Maintenance Log Card */
+.maintenance-log .card-header {
+    background-color: #4285f4; /* Google Blue */
+    color: white;
+}
+
+.maintenance-log .btn-primary {
+    background-color: #4285f4;
+}
+.maintenance-log .btn-primary:hover {
+    background-color: #3367d6;
+}
+
+/* Road Tax Log Card */
+.road-tax-log .card-header {
+    background-color: #0F9D58; /* Google Green */
+    color: white;
+}
+
+.road-tax-log .btn-primary {
+    background-color: #0F9D58;
+}
+.road-tax-log .btn-primary:hover {
+    background-color: #0b8043;
+}
+
+/* Insurance Log Card */
+.road-insurance-log .card-header {
+    background-color: #673AB7; /* Deep Purple */
+    color: white;
+}
+
+.road-insurance-log .btn-primary {
+    background-color: #673AB7;
+}
+.road-insurance-log .btn-primary:hover {
+    background-color: #5e35b1;
+}
+
+/* Fuel Log Card */
+.fuel-log .card-header {
+    background-color: #FF5722; /* Deep Orange */
+    color: white;
+}
+
+.fuel-log .btn-primary {
+    background-color: #FF5722;
+}
+.fuel-log .btn-primary:hover {
+    background-color: #e64a19;
+}
+
+/* Location Log Card */
+.location-log .card-header {
+    background-color: #607D8B; /* Blue Grey */
+    color: white;
+}
+
+.location-log .btn-primary {
+    background-color: #607D8B;
+}
+.location-log .btn-primary:hover {
+    background-color: #546e7a;
+}
+
+/* Table row hover effects for each log type */
+.maintenance-log tbody tr:hover {
+    background-color: #e8f0fe !important; /* Light blue */
+}
+
+.road-tax-log tbody tr:hover {
+    background-color: #e6f4ea !important; /* Light green */
+}
+
+.road-insurance-log tbody tr:hover {
+    background-color: #ede7f6 !important; /* Light purple */
+}
+
+.fuel-log tbody tr:hover {
+    background-color: #fbe9e7 !important; /* Light orange */
+}
+
+.location-log tbody tr:hover {
+    background-color: #eceff1 !important; /* Light blue grey */
+}
+
+/* Modal headers to match their log types */
+#entry-modal .modal-header {
+    background-color: #4285f4;
+    color: white;
+}
+
+#tax-modal .modal-header {
+    background-color: #0F9D58;
+    color: white;
+}
+
+#insurance-modal .modal-header {
+    background-color: #673AB7;
+    color: white;
+}
+
+#fuel-modal .modal-header {
+    background-color: #FF5722;
+    color: white;
+}
+
+#location-modal .modal-header {
+    background-color: #607D8B;
+    color: white;
+}
