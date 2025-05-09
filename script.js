@@ -1208,7 +1208,6 @@ function deleteTaxEntry(entryId) {
                         <td>${new Date(log.date).toISOString().split('T')[0]}</td>
                         <td>${log.description}</td>
                         <td>${Number(log.odometer).toLocaleString()}</td>
-                        <td>${Number(log.nextServiceMileage).toLocaleString()}</td>
                         <td>${log.serviceProvider || ''}</td>
                         <td>$${parseFloat(log.cost || 0).toFixed(2)}</td>
                         <td>${log.nextServiceDue ? new Date(log.nextServiceDue).toISOString().split('T')[0] : ''}</td>
@@ -1477,8 +1476,6 @@ document.getElementById('service-odometer').addEventListener('input', function()
         
         const serviceDate = document.getElementById('service-date').value;
         const serviceOdometer = document.getElementById('service-odometer').value;
-        const nextServiceMileage = parseInt(serviceOdometer) + 7000;
-        document.getElementById('service-next-mileage').value = nextServiceMileage;
         
         // Get the service description (handle 'other' option)
         let serviceDescription = document.getElementById('service-description').value;
