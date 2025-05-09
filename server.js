@@ -48,6 +48,7 @@ const maintenanceLogSchema = new mongoose.Schema({
     date: { type: Date, required: true },
     description: { type: String, required: true },
     odometer: { type: Number, required: true },
+    nextServiceMileage: { type: Number, required: false },
     serviceProvider: String,
     cost: Number,
     nextServiceDue: Date,
@@ -249,6 +250,9 @@ app.get('/api/logs/:id', async (req, res) => {
 // POST a new maintenance log
 app.post('/api/logs', async (req, res) => {
     try {
+
+        req.body.nextServiceMileage = req.body.odometer + 7000;
+
         const newLog = new MaintenanceLog(req.body);
         const savedLog = await newLog.save();
         
@@ -269,6 +273,9 @@ app.post('/api/logs', async (req, res) => {
 // PUT (update) a maintenance log
 app.put('/api/logs/:id', async (req, res) => {
     try {
+        // Calculate next service mileage
+        req.body.nextServiceMileage = req.body.odometer + 7000;
+        
         const updatedLog = await MaintenanceLog.findByIdAndUpdate(
             req.params.id,
             req.body,

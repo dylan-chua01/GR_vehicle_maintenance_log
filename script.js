@@ -85,6 +85,8 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+   
+
     // Add delete vehicle button to the vehicle info card
     function addDeleteVehicleButton() {
         const cardActions = document.querySelector('.vehicle-info .card-actions');
@@ -1147,6 +1149,8 @@ function deleteTaxEntry(entryId) {
             const insurances = insuranceResponse.ok ? await insuranceResponse.json() : [];
             const latestInsurance = insurances.sort((a, b) => new Date(b.expiryDate) - new Date(a.expiryDate))[0];
 
+            const nextServiceMileage = (vehicle.currentMileage || 0) + 7000;
+
 
             // Helper function to safely set value
         function setValue(id, value) {
@@ -1169,6 +1173,7 @@ function deleteTaxEntry(entryId) {
             document.getElementById('input-fuel-type').value = vehicle.fuelType || 'regular';
             document.getElementById('input-acquisition-date').value = vehicle.acquisitionDate ? new Date(vehicle.acquisitionDate).toISOString().split('T')[0] : '';
             document.getElementById('input-mileage').value = vehicle.currentMileage || 0;
+            document.getElementById('input-next-service-mileage').value = nextServiceMileage;
             document.getElementById('input-last-service').value = vehicle.lastService ? new Date(vehicle.lastService).toISOString().split('T')[0] : '';
             document.getElementById('input-next-service').value = vehicle.nextService ? new Date(vehicle.nextService).toISOString().split('T')[0] : '';
             //latest tax and insurance
@@ -1203,6 +1208,7 @@ function deleteTaxEntry(entryId) {
                         <td>${new Date(log.date).toISOString().split('T')[0]}</td>
                         <td>${log.description}</td>
                         <td>${Number(log.odometer).toLocaleString()}</td>
+                        <td>${Number(log.nextServiceMileage).toLocaleString()}</td>
                         <td>${log.serviceProvider || ''}</td>
                         <td>$${parseFloat(log.cost || 0).toFixed(2)}</td>
                         <td>${log.nextServiceDue ? new Date(log.nextServiceDue).toISOString().split('T')[0] : ''}</td>
@@ -1267,17 +1273,17 @@ function deleteTaxEntry(entryId) {
             // Gather vehicle information from form
             const vehicleData = {
                 year: parseInt(document.getElementById('input-year').value),
-                make: document.getElementById('input-brand').value,
-                model: document.getElementById('input-model').value,
-                plate: document.getElementById('input-plate').value,
-                engine: document.getElementById('input-engine').value,
-                chasis: document.getElementById('input-chasis').value,
-                status: document.getElementById('input-status').value,
-                fuelType: document.getElementById('input-fuel-type').value,
-                acquisitionDate: document.getElementById('input-acquisition-date').value,
-                currentMileage: parseInt(document.getElementById('input-mileage').value) || 0,
-                lastService: document.getElementById('input-last-service').value,
-                nextService: document.getElementById('input-next-service').value
+            make: document.getElementById('input-brand').value,
+            model: document.getElementById('input-model').value,
+            plate: document.getElementById('input-plate').value,
+            engine: document.getElementById('input-engine').value,
+            chasis: document.getElementById('input-chasis').value,
+            status: document.getElementById('input-status').value,
+            fuelType: document.getElementById('input-fuel-type').value,
+            acquisitionDate: document.getElementById('input-acquisition-date').value,
+            currentMileage: parseInt(document.getElementById('input-mileage').value) || 0,
+            lastService: document.getElementById('input-last-service').value,
+            nextService: document.getElementById('input-next-service').value
             };
             
             // Update vehicle via API
@@ -1386,10 +1392,23 @@ function deleteTaxEntry(entryId) {
                 // Populate form with entry data
                 document.getElementById('service-date').value = new Date(entry.date).toISOString().split('T')[0];
                 document.getElementById('service-odometer').value = entry.odometer;
+                if (entry.odometer) {
+                    document.getElementById('service-next-mileage').value = entry.odometer + 7000;
+                }
                 
                 // Handle service description
                 const descriptionSelect = document.getElementById('service-description');
                 const descriptionOther = document.getElementById('service-description-other');
+                const currentMileage = document.getElementById('service-odometer').value;
+if (currentMileage) {
+    document.getElementById('service-next-mileage').value = parseInt(currentMileage) + 7000;
+}
+
+document.getElementById('service-odometer').addEventListener('input', function() {
+    const odometer = parseInt(this.value) || 0;
+    document.getElementById('service-next-mileage').value = odometer + 7000;
+});
+
                 
                 // Check if the description is in the predefined options
                 const descriptionOption = Array.from(descriptionSelect.options).find(option => 
@@ -1458,6 +1477,8 @@ function deleteTaxEntry(entryId) {
         
         const serviceDate = document.getElementById('service-date').value;
         const serviceOdometer = document.getElementById('service-odometer').value;
+        const nextServiceMileage = parseInt(serviceOdometer) + 7000;
+        document.getElementById('service-next-mileage').value = nextServiceMileage;
         
         // Get the service description (handle 'other' option)
         let serviceDescription = document.getElementById('service-description').value;
@@ -1481,6 +1502,7 @@ function deleteTaxEntry(entryId) {
             date: serviceDate,
             description: serviceDescription,
             odometer: parseInt(serviceOdometer),
+            nextServiceMileage: parseInt(serviceOdometer) + 7000,
             serviceProvider: serviceProvider,
             cost: parseFloat(serviceCost),
             nextServiceDue: serviceNextDue,
