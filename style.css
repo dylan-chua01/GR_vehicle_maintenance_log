@@ -1,219 +1,274 @@
 :root {
-    --primary-color: #4285f4;
-    --primary-light: #a5c0f7;
-    --primary-dark: #1a56c9;
-    --secondary-color: #34a853;
-    --secondary-light: #7bdb8e;
-    --secondary-dark: #1e7e34;
-    --warning-color: #fbbc05;
-    --danger-color: #ea4335;
+    --primary-color: #2c3e50;
+    --primary-light: #34495e;
+    --primary-dark: #1a252f;
+    --secondary-color: #3498db;
+    --secondary-light: #5dade2;
+    --secondary-dark: #2874a6;
+    --accent-color: #e74c3c;
+    --success-color: #2ecc71;
+    --warning-color: #f39c12;
+    --danger-color: #e74c3c;
     --text-color: #333;
-    --text-light: #666;
-    --border-color: #e0e0e0;
-    --gray-light: #f5f5f5;
-    --gray-medium: #e0e0e0;
+    --text-light: #7f8c8d;
+    --border-color: #ecf0f1;
+    --gray-light: #f5f7fa;
+    --gray-medium: #dfe6e9;
     --white: #ffffff;
-}
-
-* {
+    --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    --transition: all 0.3s ease;
+  }
+  
+  * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-}
-
-body {
+    font-family: 'Roboto', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  }
+  
+  body {
     color: var(--text-color);
     background-color: var(--gray-light);
-    line-height: 1.5;
-}
-
-.container {
+    line-height: 1.6;
+  }
+  
+  .container {
     max-width: 1200px;
     margin: 0 auto;
     padding: 20px;
-}
-
-header {
-    background-color: var(--primary-color);
-    color: white;
-    padding: 20px;
-    text-align: center;
-    margin-bottom: 20px;
-    border-radius: 5px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-}
-
-/* Card Styles */
-.card {
-    background-color: var(--white);
-    border-radius: 5px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    margin-bottom: 20px;
-    overflow: hidden;
-}
-
-#service-next-due {
-    display: none;
   }
   
-
-.card-header {
-    background-color: var(--primary-light);
-    color: var(--text-color);
-    padding: 15px 20px;
+  /* Header Styles */
+  header {
+    background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+    color: white;
+    padding: 25px;
+    margin-bottom: 30px;
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  header h1 {
+    font-size: 2.2rem;
+    font-weight: 700;
+    margin-bottom: 10px;
+    position: relative;
+    z-index: 1;
+  }
+  
+  header h1 i {
+    margin-right: 10px;
+  }
+  
+  /* Card Styles */
+  .card {
+    background-color: var(--white);
+    border-radius: 10px;
+    box-shadow: var(--shadow);
+    margin-bottom: 30px;
+    overflow: hidden;
+    transition: var(--transition);
+  }
+  
+  .card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+  }
+  
+  .card-header {
+    padding: 18px 25px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-}
-
-.card-header h2 {
-    font-size: 1.25rem;
-    margin: 0;
-}
-
-.card-body {
-    padding: 20px;
-}
-
-/* Vehicle Info Grid */
-.info-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 20px;
-}
-
-.info-group {
+    border-bottom: 1px solid var(--border-color);
+  }
+  
+  .card-header h2 {
+    font-size: 1.4rem;
+    font-weight: 600;
+    color: var(--primary-color);
     display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
-.info-item {
-    display: flex;
-    flex-direction: column;
-}
-
-.info-item label {
-    font-weight: bold;
-    color: var(--text-light);
-    font-size: 0.85rem;
-    margin-bottom: 2px;
-}
-
-.info-item span {
-    font-size: 1rem;
-    padding: 5px 0;
-}
-
-.status-active {
+    align-items: center;
+  }
+  
+  .card-header h2 i {
+    margin-right: 10px;
     color: var(--secondary-color);
-    font-weight: bold;
-}
-
-.notice {
-    color: var(--warning-color);
-    font-weight: bold;
-}
-
-.notice[data-status="overdue"] {
-    color: var(--danger-color);
-}
-
-
-/* Table Styles */
-.table-responsive {
-    overflow-x: auto;
-}
-
-table {
-    width: 100%;
-    border-collapse: collapse;
+  }
+  
+  .card-body {
+    padding: 25px;
+  }
+  
+  /* Form Controls */
+  .form-group {
     margin-bottom: 20px;
-    min-width: 600px;
-}
-
-thead th {
-    background-color: var(--primary-light);
-    color: var(--text-color);
-    font-weight: bold;
-    text-align: left;
-    padding: 10px;
+  }
+  
+  .form-control {
+    width: 100%;
+    padding: 12px 15px;
     border: 1px solid var(--border-color);
-}
-
-tbody td {
-    padding: 8px 10px;
-    border: 1px solid var(--gray-medium);
-    text-align: left;
-}
-
-tbody tr:nth-child(even) {
-    background-color: var(--gray-light);
-}
-
-.section-header td {
-    background-color: var(--gray-medium);
-    font-weight: bold;
-    text-transform: uppercase;
-    font-size: 0.9rem;
-}
-
-tfoot tr {
-    background-color: var(--primary-light) !important;
-    font-weight: bold;
-}
-
-/* Button Styles */
-.btn {
-    display: inline-block;
-    padding: 8px 16px;
-    border-radius: 4px;
+    border-radius: 6px;
+    font-size: 1rem;
+    transition: var(--transition);
+  }
+  
+  .form-control:focus {
+    border-color: var(--secondary-color);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+  }
+  
+  .form-input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    font-size: 1rem;
+  }
+  
+  /* Button Styles */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 18px;
+    border-radius: 6px;
     border: none;
     cursor: pointer;
-    font-size: 0.9rem;
+    font-size: 0.95rem;
     font-weight: 500;
-    text-align: center;
-    transition: background-color 0.2s, transform 0.1s;
-}
-
-.btn:hover {
-    transform: translateY(-1px);
-}
-
-.btn:active {
-    transform: translateY(1px);
-}
-
-.btn-primary {
-    background-color: var(--primary-color);
-    color: white;
-}
-
-.btn-primary:hover {
-    background-color: var(--primary-dark);
-}
-
-.btn-success {
+    transition: var(--transition);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  .btn i {
+    margin-right: 8px;
+  }
+  
+  .btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  }
+  
+  .btn:active {
+    transform: translateY(0);
+  }
+  
+  .btn-primary {
     background-color: var(--secondary-color);
     color: white;
-}
-
-.btn-success:hover {
+  }
+  
+  .btn-primary:hover {
     background-color: var(--secondary-dark);
-}
-
-.btn-secondary {
+  }
+  
+  .btn-success {
+    background-color: var(--success-color);
+    color: white;
+  }
+  
+  .btn-success:hover {
+    background-color: #27ae60;
+  }
+  
+  .btn-secondary {
     background-color: var(--gray-medium);
     color: var(--text-color);
-}
-
-.btn-secondary:hover {
+  }
+  
+  .btn-secondary:hover {
+    background-color: #bdc3c7;
+  }
+  
+  .btn-danger {
+    background-color: var(--danger-color);
+    color: white;
+  }
+  
+  .btn-danger:hover {
+    background-color: #c0392b;
+  }
+  
+  .btn-icon {
+    padding: 8px;
+    border-radius: 50%;
+    width: 34px;
+    height: 34px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background-color: transparent;
+    color: var(--text-light);
+    transition: var(--transition);
+  }
+  
+  .btn-icon:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+    color: var(--secondary-color);
+  }
+  
+  .btn-icon.delete-entry:hover {
+    color: var(--danger-color);
+  }
+  
+  /* Table Styles */
+  .table-responsive {
+    overflow-x: auto;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+  
+  table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    min-width: 800px;
+  }
+  
+  thead th {
+    background-color: var(--primary-color);
+    color: white;
+    font-weight: 500;
+    padding: 14px 16px;
+    text-align: left;
+    position: sticky;
+    top: 0;
+  }
+  
+  thead th:first-child {
+    border-top-left-radius: 8px;
+  }
+  
+  thead th:last-child {
+    border-top-right-radius: 8px;
+  }
+  
+  tbody td {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border-color);
+    vertical-align: middle;
+  }
+  
+  tbody tr:last-child td {
+    border-bottom: none;
+  }
+  
+  tbody tr:nth-child(even) {
     background-color: var(--gray-light);
-}
-
-/* Modal Styles */
-.modal {
+  }
+  
+  tbody tr:hover {
+    background-color: rgba(52, 152, 219, 0.1) !important;
+  }
+  
+  /* Modal Styles */
+  .modal {
     display: none;
     position: fixed;
     z-index: 1000;
@@ -222,284 +277,225 @@ tfoot tr {
     width: 100%;
     height: 100%;
     background-color: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(3px);
     overflow: auto;
-}
-
-.modal-content {
+  }
+  
+  .modal-content {
     background-color: var(--white);
     margin: 5% auto;
     width: 90%;
     max-width: 700px;
-    border-radius: 5px;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    border-radius: 10px;
+    box-shadow: 0 5px 25px rgba(0, 0, 0, 0.2);
     animation: modalFadeIn 0.3s;
-}
-
-@keyframes modalFadeIn {
-    from {opacity: 0; transform: translateY(-20px);}
-    to {opacity: 1; transform: translateY(0);}
-}
-
-.modal-header {
-    padding: 15px 20px;
-    background-color: var(--primary-light);
-    border-top-left-radius: 5px;
-    border-top-right-radius: 5px;
+  }
+  
+  @keyframes modalFadeIn {
+    from { opacity: 0; transform: translateY(-30px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  
+  .modal-header {
+    padding: 20px;
+    background-color: var(--primary-color);
+    color: white;
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-}
-
-.modal-header h3 {
+  }
+  
+  .modal-header h3 {
     margin: 0;
-    color: var(--text-color);
-}
-
-.close {
-    color: var(--text-color);
-    font-size: 24px;
+    font-weight: 500;
+  }
+  
+  .close {
+    color: white;
+    font-size: 28px;
     font-weight: bold;
     cursor: pointer;
-}
-
-.close:hover {
-    color: var(--primary-dark);
-}
-
-.modal-body {
-    padding: 20px;
-}
-
-/* Form Styles */
-.form-group {
-    margin-bottom: 15px;
-}
-
-.form-group label {
-    display: block;
-    margin-bottom: 5px;
-    font-weight: 500;
-}
-
-.form-group input, .form-group select, .form-group textarea {
-    width: 100%;
-    padding: 8px 12px;
-    border: 1px solid var(--border-color);
-    border-radius: 4px;
-    font-size: 1rem;
-}
-
-.form-group input:focus, .form-group select:focus, .form-group textarea:focus {
-    border-color: var(--primary-color);
-    outline: none;
-    box-shadow: 0 0 0 2px var(--primary-light);
-}
-
-.form-actions {
+    transition: var(--transition);
+  }
+  
+  .close:hover {
+    color: var(--accent-color);
+    transform: rotate(90deg);
+  }
+  
+  .modal-body {
+    padding: 25px;
+  }
+  
+  /* Form Layout */
+  .form-row {
     display: flex;
-    justify-content: flex-end;
-    gap: 10px;
-    margin-top: 20px;
-}
-
-/* Responsive Styles */
-@media (max-width: 768px) {
-    .info-grid {
-        grid-template-columns: 1fr;
+    gap: 20px;
+    margin-bottom: 20px;
+  }
+  
+  .form-row .form-group {
+    flex: 1;
+    margin-bottom: 0;
+  }
+  
+  .input-with-unit {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+  
+  .input-with-unit .unit {
+    position: absolute;
+    right: 12px;
+    color: var(--text-light);
+  }
+  
+  /* Vehicle Info Grid */
+  .info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+  }
+  
+  .info-group {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+  }
+  
+  .info-item {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .info-item label {
+    font-weight: 500;
+    color: var(--text-light);
+    font-size: 0.9rem;
+    margin-bottom: 5px;
+  }
+  
+  /* Status Indicators */
+  .status-active {
+    color: var(--success-color);
+    font-weight: 500;
+  }
+  
+  .notice {
+    color: var(--warning-color);
+    font-weight: 500;
+  }
+  
+  .notice[data-status="overdue"] {
+    color: var(--danger-color);
+  }
+  
+  /* Card Color Variations */
+  .maintenance-log .card-header {
+    background-color: #3498db;
+    color: white;
+  }
+  
+  .road-tax-log .card-header {
+    background-color: #2ecc71;
+    color: white;
+  }
+  
+  .road-insurance-log .card-header {
+    background-color: #9b59b6;
+    color: white;
+  }
+  
+  .fuel-log .card-header {
+    background-color: #e67e22;
+    color: white;
+  }
+  
+  .location-log .card-header {
+    background-color: #34495e;
+    color: white;
+  }
+  
+  /* Responsive Styles */
+  @media (max-width: 992px) {
+    .container {
+      padding: 15px;
     }
     
-    table {
-        min-width: 100%;
+    header h1 {
+      font-size: 1.8rem;
     }
     
     .card-header {
-        flex-direction: column;
-        gap: 10px;
-        align-items: flex-start;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 15px;
+    }
+    
+    .card-actions {
+      width: 100%;
+      display: flex;
+      gap: 10px;
     }
     
     .btn {
-        width: 100%;
+      flex: 1;
+    }
+  }
+  
+  @media (max-width: 768px) {
+    .info-grid {
+      grid-template-columns: 1fr;
+    }
+    
+    .form-row {
+      flex-direction: column;
+      gap: 15px;
     }
     
     .modal-content {
-        width: 95%;
-        margin: 10% auto;
+      width: 95%;
+      margin: 20px auto;
     }
-}
-
-/* Icon Styles */
-.icon-bell::before {
-    content: "🔔";
-    margin-right: 5px;
-}
-
-#delete-vehicle {
-    display: none;
   }
-
-#delete-maintenance,
-#delete-maintenance {
-display: none;
-}
-
-/* Action Icons */
-.action-icon {
-    cursor: pointer;
-    margin: 0 5px;
-    color: var(--primary-color);
-}
-
-.action-icon:hover {
-    color: var(--primary-dark);
-}
-
-.edit-icon::before {
-    content: "✏️";
-}
-
-.delete-icon::before {
-    content: "🗑️";
-}
-
-/* Road Tax Section - Similar to Maintenance Log */
-.road-tax {
-    margin-top: 20px;
-}
-
-#road-tax-table {
-    width: 100%;
-    border-collapse: collapse;
+  
+  /* Animations */
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  
+  .fade-in {
+    animation: fadeIn 0.5s ease-in;
+  }
+  
+  /* Utility Classes */
+  .text-center {
+    text-align: center;
+  }
+  
+  .mb-20 {
     margin-bottom: 20px;
-}
-
-#road-tax-table th {
-    background-color: var(--primary-light);
-    color: var(--text-color);
-    font-weight: bold;
-    text-align: left;
-    padding: 10px;
-    border: 1px solid var(--border-color);
-}
-
-#road-tax-table td {
-    padding: 8px 10px;
-    border: 1px solid var(--gray-medium);
-    text-align: left;
-}
-
-#road-tax-table tr:nth-child(even) {
-    background-color: var(--gray-light);
-}
-
-/* Maintenance Log Card */
-.maintenance-log .card-header {
-    background-color: #4285f4; /* Google Blue */
-    color: white;
-}
-
-.maintenance-log .btn-primary {
-    background-color: #4285f4;
-}
-.maintenance-log .btn-primary:hover {
-    background-color: #3367d6;
-}
-
-/* Road Tax Log Card */
-.road-tax-log .card-header {
-    background-color: #0F9D58; /* Google Green */
-    color: white;
-}
-
-.road-tax-log .btn-primary {
-    background-color: #0F9D58;
-}
-.road-tax-log .btn-primary:hover {
-    background-color: #0b8043;
-}
-
-/* Insurance Log Card */
-.road-insurance-log .card-header {
-    background-color: #673AB7; /* Deep Purple */
-    color: white;
-}
-
-.road-insurance-log .btn-primary {
-    background-color: #673AB7;
-}
-.road-insurance-log .btn-primary:hover {
-    background-color: #5e35b1;
-}
-
-/* Fuel Log Card */
-.fuel-log .card-header {
-    background-color: #FF5722; /* Deep Orange */
-    color: white;
-}
-
-.fuel-log .btn-primary {
-    background-color: #FF5722;
-}
-.fuel-log .btn-primary:hover {
-    background-color: #e64a19;
-}
-
-/* Location Log Card */
-.location-log .card-header {
-    background-color: #607D8B; /* Blue Grey */
-    color: white;
-}
-
-.location-log .btn-primary {
-    background-color: #607D8B;
-}
-.location-log .btn-primary:hover {
-    background-color: #546e7a;
-}
-
-/* Table row hover effects for each log type */
-.maintenance-log tbody tr:hover {
-    background-color: #e8f0fe !important; /* Light blue */
-}
-
-.road-tax-log tbody tr:hover {
-    background-color: #e6f4ea !important; /* Light green */
-}
-
-.road-insurance-log tbody tr:hover {
-    background-color: #ede7f6 !important; /* Light purple */
-}
-
-.fuel-log tbody tr:hover {
-    background-color: #fbe9e7 !important; /* Light orange */
-}
-
-.location-log tbody tr:hover {
-    background-color: #eceff1 !important; /* Light blue grey */
-}
-
-/* Modal headers to match their log types */
-#entry-modal .modal-header {
-    background-color: #4285f4;
-    color: white;
-}
-
-#tax-modal .modal-header {
-    background-color: #0F9D58;
-    color: white;
-}
-
-#insurance-modal .modal-header {
-    background-color: #673AB7;
-    color: white;
-}
-
-#fuel-modal .modal-header {
-    background-color: #FF5722;
-    color: white;
-}
-
-#location-modal .modal-header {
-    background-color: #607D8B;
-    color: white;
-}
+  }
+  
+  /* Custom Scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    background: var(--gray-light);
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    background: var(--secondary-color);
+    border-radius: 4px;
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--secondary-dark);
+  }

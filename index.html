@@ -11,6 +11,20 @@
     <div class="container">
         <header>
             <h1><i class="fas fa-truck"></i> Go Rush Fleet Maintenance System</h1>
+
+                </div>
+                <div id="search-results" class="search-results-container" style="display:none;">
+                    <div class="search-results-header">
+                        <h3>Search Results</h3>
+                        <button id="close-search" class="btn-icon">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div id="search-results-content" class="search-results-content">
+                        <!-- Results will be populated here -->
+                    </div>
+                </div>
+            </div>
         </header>
 
         <!-- Vehicle Selection Dropdown -->
@@ -143,7 +157,7 @@
         <!-- Maintenance Log with Add/Edit functionality -->
         <div class="card maintenance-log">
             <div class="card-header">
-                <h2><i class="fas fa-clipboard-list"></i> Maintenance Log</h2>
+                <h2 style="color: white;"><i class="fas fa-clipboard-list"></i> Maintenance Log</h2>
                 <button id="add-log-entry" class="btn btn-primary">
                     <i class="fas fa-plus"></i> Add Entry
                 </button>
@@ -158,6 +172,7 @@
                                 <th>Odometer</th>
                                 <th>Service Provider</th>
                                 <th>Cost</th>
+                                <th>Next Service</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
@@ -236,7 +251,7 @@
                                 </div>
                             </div>
                             <div class="form-group">
-                                <!-- <label for="service-next-due">Next Service Due:</label> -->
+                                <label for="service-next-due">Next Service Due:</label>
                                 <input type="date" id="service-next-due" class="form-control">
                             </div>
                         </div>
@@ -323,7 +338,7 @@
         <!-- Road Tax -->
         <div class="card road-tax-log">
             <div class="card-header">
-                <h2><i class="fas fa-receipt"></i> Road Tax Log</h2>
+                <h2 style="color: white;"><i class="fas fa-receipt"></i> Road Tax Log</h2>
                 <button id="add-tax-entry" class="btn btn-primary">
                     <i class="fas fa-plus"></i> Add Entry
                 </button>
@@ -405,7 +420,7 @@
         <!-- Fuel Log -->
 <div class="card fuel-log">
     <div class="card-header">
-        <h2><i class="fas fa-receipt"></i> Fuel Log</h2>
+        <h2 style="color: white;"><i class="fas fa-receipt"></i> Fuel Log</h2>
         <button id="add-fuel-entry" class="btn btn-primary">
             <i class="fas fa-plus"></i> Add Entry
         </button>
@@ -485,7 +500,7 @@
 <!-- Insurance -->
 <div class="card road-insurance-log">
     <div class="card-header">
-        <h2><i class="fas fa-receipt"></i> Insurance Log</h2>
+        <h2 style="color: white;"><i class="fas fa-receipt"></i> Insurance Log</h2>
         <button id="add-insurance-entry" class="btn btn-primary">
             <i class="fas fa-plus"></i> Add Entry
         </button>
@@ -575,7 +590,7 @@
  <!-- Location -->
  <div class="card location-log">
     <div class="card-header">
-        <h2><i class="fas fa-receipt"></i> Location Log</h2>
+        <h2 style="color: white;"><i class="fas fa-receipt"></i> Location Log</h2>
         <button id="add-location-entry" class="btn btn-primary">
             <i class="fas fa-plus"></i> Add Entry
         </button>

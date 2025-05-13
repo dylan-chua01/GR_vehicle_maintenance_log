@@ -52,6 +52,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const locationForm = document.getElementById('location-form');
     const cancelLocationBtn = document.getElementById('cancel-location');
     const locationModalTitle = document.getElementById('location-modal-title');
+
+
     
 
     
@@ -184,6 +186,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 vehicleModal.style.display = 'none';
             });
         });
+
+        
 
         // Road tax controls
         addTaxEntryBtn.addEventListener('click', () => openTaxModal());
@@ -1205,21 +1209,21 @@ function deleteTaxEntry(entryId) {
                     row.dataset.id = log._id;
                     
                     row.innerHTML = `
-                        <td>${new Date(log.date).toISOString().split('T')[0]}</td>
-                        <td>${log.description}</td>
-                        <td>${Number(log.odometer).toLocaleString()}</td>
-                        <td>${log.serviceProvider || ''}</td>
-                        <td>$${parseFloat(log.cost || 0).toFixed(2)}</td>
-                        <td>${log.nextServiceDue ? new Date(log.nextServiceDue).toISOString().split('T')[0] : ''}</td>
-                        <td>
-                            <button class="btn-icon edit-entry" title="Edit">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            <button class="btn-icon delete-entry" title="Delete">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </td>
-                    `;
+    <td>${new Date(log.date).toISOString().split('T')[0]}</td>
+    <td>${log.description}</td>
+    <td>${Number(log.odometer).toLocaleString()}</td>
+    <td>${log.serviceProvider || ''}</td>
+    <td>$${parseFloat(log.cost || 0).toFixed(2)}</td>
+    <td>${log.nextServiceDue ? new Date(log.nextServiceDue).toISOString().split('T')[0] : ''}</td>
+    <td class="actions-cell">
+        <button class="btn-icon edit-entry" title="Edit">
+            <i class="fas fa-edit"></i>
+        </button>
+        <button class="btn-icon delete-entry" title="Delete">
+            <i class="fas fa-trash"></i>
+        </button>
+    </td>
+`;
                     
                     logEntriesContainer.appendChild(row);
                 });
@@ -1390,26 +1394,12 @@ function deleteTaxEntry(entryId) {
                 
                 // Populate form with entry data
                 document.getElementById('service-date').value = new Date(entry.date).toISOString().split('T')[0];
-                document.getElementById('service-odometer').value = entry.odometer;
-                if (entry.odometer) {
-                    document.getElementById('service-next-mileage').value = entry.odometer + 7000;
-                }
+                document.getElementById('service-odometer').value = entry.odometer || '';
                 
                 // Handle service description
                 const descriptionSelect = document.getElementById('service-description');
                 const descriptionOther = document.getElementById('service-description-other');
-                const currentMileage = document.getElementById('service-odometer').value;
-if (currentMileage) {
-    document.getElementById('service-next-mileage').value = parseInt(currentMileage) + 7000;
-}
-
-document.getElementById('service-odometer').addEventListener('input', function() {
-    const odometer = parseInt(this.value) || 0;
-    document.getElementById('service-next-mileage').value = odometer + 7000;
-});
-
                 
-                // Check if the description is in the predefined options
                 const descriptionOption = Array.from(descriptionSelect.options).find(option => 
                     option.value && option.value !== 'other' && entry.description.includes(option.value)
                 );
@@ -1419,15 +1409,19 @@ document.getElementById('service-odometer').addEventListener('input', function()
                     descriptionOther.style.display = 'none';
                 } else {
                     descriptionSelect.value = 'other';
-                    descriptionOther.value = entry.description;
+                    descriptionOther.value = entry.description || '';
                     descriptionOther.style.display = 'block';
                 }
                 
                 document.getElementById('service-provider').value = entry.serviceProvider || '';
                 document.getElementById('service-cost').value = entry.cost || 0;
-                document.getElementById('service-next-due').value = entry.nextServiceDue ? new Date(entry.nextServiceDue).toISOString().split('T')[0] : '';
                 document.getElementById('service-notes').value = entry.notes || '';
                 document.getElementById('entry-id').value = entry._id;
+                
+                const nextServiceDueField = document.getElementById('service-next-due');
+                if (nextServiceDueField) {
+                    nextServiceDueField.value = entry.nextServiceDue ? new Date(entry.nextServiceDue).toISOString().split('T')[0] : '';
+                }
                 
             } catch (error) {
                 console.error('Error fetching maintenance entry:', error);
@@ -1448,13 +1442,11 @@ document.getElementById('service-odometer').addEventListener('input', function()
                 }
             } catch (error) {
                 console.error('Error fetching vehicle mileage:', error);
-                // Continue without setting mileage
             }
             
             document.getElementById('entry-id').value = '';
         }
         
-        // Show modal
         entryModal.style.display = 'block';
     }
 
