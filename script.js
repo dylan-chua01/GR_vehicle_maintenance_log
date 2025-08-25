@@ -313,13 +313,13 @@ async function logMileageEntry() {
         
         if (response.ok) {
             alert('Mileage logged successfully!');
+            
+            // Clear the form fields
+            document.getElementById('current-mileage').value = '';
+            document.getElementById('mileage-notes').value = '';
+            
             await loadLatestMileage();
             await updateMileageSummary();
-            
-            // REMOVED the vehicle info update since we're only logging mileage
-            // if (selectedVehicleId === currentVehicleId) {
-            //     await displayVehicleInfo(currentVehicleId);
-            // }
         } else {
             throw new Error('Failed to log mileage');
         }
