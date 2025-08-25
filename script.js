@@ -81,7 +81,6 @@ const nextServiceMileageElement = document.getElementById('next-service-mileage'
 const milesUntilServiceElement = document.getElementById('miles-until-service');
 const dashboardMilesRemainingElement = document.getElementById('dashboard-miles-remaining');
 const mileageVehicleSelect = document.getElementById('mileage-vehicle-select');
-
     
     // Current selected vehicle
     let currentVehicleId = null;
@@ -285,9 +284,9 @@ async function updateMileageSummary() {
 async function logMileageEntry() {
     const mileageVehicleSelect = document.getElementById('mileage-vehicle-select');
     const selectedVehicleId = mileageVehicleSelect ? mileageVehicleSelect.value : currentVehicleId;
-    const mileage = parseInt(currentMileageInput.value);
-    const date = mileageDateInput.value;
-    const notes = mileageNotesInput.value;
+    const mileage = parseInt(document.getElementById('current-mileage').value);
+    const date = document.getElementById('mileage-date').value;
+    const notes = document.getElementById('mileage-notes').value;
     
     if (!selectedVehicleId) {
         alert('Please select a vehicle first');
@@ -577,6 +576,11 @@ if (mileageVehicleSelect) {
         await updateMileageSummary();
     });
 }
+
+    const logMileageBtn = document.getElementById('log-mileage'); // Use correct ID
+    if (logMileageBtn) {
+        logMileageBtn.addEventListener('click', logMileageEntry);
+    }
 
 // Also add this to set today's date by default in the browse field
 const browseDateInput = document.getElementById('browse-date');
