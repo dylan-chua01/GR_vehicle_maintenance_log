@@ -701,10 +701,10 @@ app.post('/api/mileage', async (req, res) => {
         const newMileageLog = new MileageLog(req.body);
         const savedMileageLog = await newMileageLog.save();
         
-        // Update vehicle's current mileage
-        await Vehicle.findByIdAndUpdate(req.body.vehicleId, {
-            currentMileage: req.body.mileage
-        });
+        // REMOVED the vehicle update - only log mileage, don't update vehicle
+        // await Vehicle.findByIdAndUpdate(req.body.vehicleId, {
+        //     currentMileage: req.body.mileage
+        // });
         
         res.status(201).json(savedMileageLog);
     } catch (error) {

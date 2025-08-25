@@ -228,7 +228,6 @@ async function updateMileageSummary() {
         return;
     }
     
-    
     try {
         // Get vehicle info to check next service mileage
         const vehicleResponse = await fetch(`${API.vehicles}/${selectedVehicleId}`);
@@ -240,7 +239,7 @@ async function updateMileageSummary() {
                 nextServiceMileageElement.textContent = nextServiceMileage.toLocaleString();
             }
             
-            // Get latest mileage
+            // Get latest mileage from mileage logs instead of vehicle
             const mileageResponse = await fetch(`${API.mileageLatest}?vehicleId=${selectedVehicleId}`);
             if (mileageResponse.ok) {
                 const mileageData = await mileageResponse.json();
@@ -317,10 +316,10 @@ async function logMileageEntry() {
             await loadLatestMileage();
             await updateMileageSummary();
             
-            // Also update the vehicle info to reflect new mileage if it's the current vehicle
-            if (selectedVehicleId === currentVehicleId) {
-                await displayVehicleInfo(currentVehicleId);
-            }
+            // REMOVED the vehicle info update since we're only logging mileage
+            // if (selectedVehicleId === currentVehicleId) {
+            //     await displayVehicleInfo(currentVehicleId);
+            // }
         } else {
             throw new Error('Failed to log mileage');
         }
