@@ -1,13 +1,18 @@
-document.addEventListener('DOMContentLoaded', function() {
     // API endpoints
     const API = {
         vehicles: '/api/vehicles',
         logs: '/api/logs',
-        taxes: 'api/taxes',
+        taxes: '/api/taxes',
         fuel: '/api/fuel',
         insurance: '/api/insurance',
         locations: '/api/locations',
+        mileage: '/api/mileage',
+        mileageLatest: '/api/mileage/latest',
+            mileageByDate: '/api/mileage/by-date'
     };
+
+document.addEventListener('DOMContentLoaded', function() {
+
 
     // DOM elements
     const vehicleSelect = document.getElementById('vehicle-select');
@@ -21,6 +26,13 @@ document.addEventListener('DOMContentLoaded', function() {
     const addTaxEntryBtn = document.getElementById('add-tax-entry');
     const taxModal = document.getElementById('tax-modal');
     const roadTaxForm = document.getElementById('road-tax-form');
+    const dashboardRefreshBtn = document.querySelector('.dashboard-refresh');
+    const dashboardTable = document.getElementById('dashboard-table');
+
+        const mileageHeader = document.getElementById('mileage-tracker-header');
+    const mileageContent = document.getElementById('mileage-tracker-content');
+    const toggleButton = mileageHeader.querySelector('.collapse-toggle');
+
 
     //fuel DOM elements
     const fuelEntriesContainer = document.getElementById('fuel-entries');
@@ -53,15 +65,23 @@ document.addEventListener('DOMContentLoaded', function() {
     const cancelLocationBtn = document.getElementById('cancel-location');
     const locationModalTitle = document.getElementById('location-modal-title');
 
-
-    
-
-    
     // Modals
     const entryModal = document.getElementById('entry-modal');
     const vehicleModal = document.getElementById('vehicle-modal');
     const maintenanceForm = document.getElementById('maintenance-form');
     const newVehicleForm = document.getElementById('new-vehicle-form');
+
+    // Daily Mileage
+const currentMileageInput = document.getElementById('current-mileage');
+const mileageDateInput = document.getElementById('mileage-date');
+const mileageNotesInput = document.getElementById('mileage-notes');
+const logMileageBtn = document.getElementById('log-mileage');
+const lastMileageElement = document.getElementById('last-mileage');
+const nextServiceMileageElement = document.getElementById('next-service-mileage');
+const milesUntilServiceElement = document.getElementById('miles-until-service');
+const dashboardMilesRemainingElement = document.getElementById('dashboard-miles-remaining');
+const mileageVehicleSelect = document.getElementById('mileage-vehicle-select');
+
     
     // Current selected vehicle
     let currentVehicleId = null;
@@ -69,25 +89,400 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize the application
     initApp();
 
-    // Application initialization
-    async function initApp() {
-        try {
-            setupEventListeners();
-            await populateVehicleDropdown();
-            
-            // Show delete vehicle button
-            addDeleteVehicleButton();
+        let dashboardData = {
+    vehicles: [],
+    insuranceData: [],
+    taxData: []
+};
+   
+mileageHeader.addEventListener('click', function() {
+    const isExpanded = mileageContent.classList.contains('expanded');
+    
+    if (isExpanded) {
+        // Collapse
+        mileageContent.classList.remove('expanded');
+        toggleButton.classList.remove('expanded');
+    } else {
+        // Expand
+        mileageContent.style.display = 'block'; // Ensure it's visible first
+        mileageContent.classList.add('expanded');
+        toggleButton.classList.add('expanded');
+    }
+});
 
-            if (currentVehicleId) {
-                await displayLocationLogs(currentVehicleId);
+    const vehicleManagementHeader = document.getElementById('vehicle-management-header');
+    const vehicleManagementContent = document.getElementById('vehicle-management-content');
+    
+    if (vehicleManagementHeader && vehicleManagementContent) {
+        vehicleManagementHeader.addEventListener('click', function() {
+            const toggle = this.querySelector('.collapse-toggle');
+            const icon = toggle.querySelector('i');
+            
+            vehicleManagementContent.classList.toggle('expanded');
+            icon.classList.toggle('fa-chevron-down');
+            icon.classList.toggle('fa-chevron-up');
+            
+            // Add rotation animation to the toggle button
+            toggle.classList.toggle('expanded');
+        });
+    }
+    // Application initialization
+async function refreshDashboard() {
+    try {
+        showDashboardLoading();
+        
+        // Fetch vehicles
+        const vehiclesResponse = await fetch(API.vehicles);
+        if (!vehiclesResponse.ok) throw new Error('Failed to fetch vehicles');
+        dashboardData.vehicles = await vehiclesResponse.json();
+        
+        // Fetch insurance and tax data for all vehicles
+        await fetchExpiryData();
+        
+        renderDashboardTable();
+        hideDashboardLoading();
+        
+    } catch (error) {
+        console.error('Error refreshing dashboard:', error);
+        hideDashboardLoading();
+        showError('Failed to refresh dashboard data');
+    }
+}
+
+
+        document.querySelectorAll('.tab-button').forEach(button => {
+            button.addEventListener('click', () => {
+                const tabId = button.dataset.tab;
+
+                // Remove active class from all tabs and content
+                document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+                // Add active class to clicked tab and corresponding content
+                button.classList.add('active');
+                document.getElementById(tabId + '-tab').classList.add('active');
+            });
+        });
+
+function openModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.style.display = 'block';
+    }
+}
+
+function closeModal() {
+    document.querySelectorAll('.modal').forEach(modal => {
+        modal.style.display = 'none';
+    });
+}
+
+async function initMileageTracker() {
+    // Set the mileage vehicle selector to match the main vehicle selector
+    if (currentVehicleId) {
+        mileageVehicleSelect.value = currentVehicleId;
+        await loadLatestMileage();
+        await updateMileageSummary();
+    }
+}
+
+
+async function loadLatestMileage() {
+    const mileageVehicleSelect = document.getElementById('mileage-vehicle-select');
+    const selectedVehicleId = mileageVehicleSelect ? mileageVehicleSelect.value : currentVehicleId;
+    
+    if (!selectedVehicleId) {
+        // Clear the fields if no vehicle is selected
+        if (currentMileageInput) currentMileageInput.value = '';
+        if (lastMileageElement) lastMileageElement.textContent = '-';
+        return;
+    }
+    
+    try {
+        const response = await fetch(`${API.mileageLatest}?vehicleId=${selectedVehicleId}`);
+        if (response.ok) {
+            const mileageData = await response.json();
+            if (mileageData) {
+                if (currentMileageInput) currentMileageInput.value = mileageData.mileage;
+                if (lastMileageElement) lastMileageElement.textContent = mileageData.mileage.toLocaleString();
+                // Set date to today by default
+                if (mileageDateInput) mileageDateInput.value = new Date().toISOString().split('T')[0];
+            } else {
+                if (currentMileageInput) currentMileageInput.value = '';
+                if (lastMileageElement) lastMileageElement.textContent = '-';
             }
+        }
+    } catch (error) {
+        console.error('Error loading latest mileage:', error);
+    }
+}
+
+async function updateMileageSummary() {
+    const mileageVehicleSelect = document.getElementById('mileage-vehicle-select');
+    const selectedVehicleId = mileageVehicleSelect ? mileageVehicleSelect.value : currentVehicleId;
+    
+    if (!selectedVehicleId) {
+        // Clear the summary if no vehicle is selected
+        if (nextServiceMileageElement) nextServiceMileageElement.textContent = '-';
+        if (milesUntilServiceElement) milesUntilServiceElement.textContent = '-';
+        if (dashboardMilesRemainingElement) dashboardMilesRemainingElement.textContent = '-';
+        return;
+    }
+    
+    
+    try {
+        // Get vehicle info to check next service mileage
+        const vehicleResponse = await fetch(`${API.vehicles}/${selectedVehicleId}`);
+        if (vehicleResponse.ok) {
+            const vehicle = await vehicleResponse.json();
+            const nextServiceMileage = vehicle.nextServiceMileage || (vehicle.currentMileage + 7000);
+            
+            if (nextServiceMileageElement) {
+                nextServiceMileageElement.textContent = nextServiceMileage.toLocaleString();
+            }
+            
+            // Get latest mileage
+            const mileageResponse = await fetch(`${API.mileageLatest}?vehicleId=${selectedVehicleId}`);
+            if (mileageResponse.ok) {
+                const mileageData = await mileageResponse.json();
+                if (mileageData) {
+                    const milesRemaining = nextServiceMileage - mileageData.mileage;
+                    
+                    if (milesUntilServiceElement) {
+                        milesUntilServiceElement.textContent = milesRemaining.toLocaleString();
+                    }
+                    
+                    // Only update dashboard if this is the currently selected vehicle
+                    if (selectedVehicleId === currentVehicleId && dashboardMilesRemainingElement) {
+                        dashboardMilesRemainingElement.textContent = milesRemaining.toLocaleString();
+                    }
+                    
+                    // Add color coding based on miles remaining
+                    const statusClass = milesRemaining <= 100 ? 'mileage-danger' : 
+                                       milesRemaining <= 500 ? 'mileage-warning' : 
+                                       'mileage-good';
+                    
+                    if (milesUntilServiceElement) {
+                        milesUntilServiceElement.className = `stat-value ${statusClass}`;
+                    }
+                    
+                    if (selectedVehicleId === currentVehicleId && dashboardMilesRemainingElement) {
+                        dashboardMilesRemainingElement.className = `stat-value ${statusClass}`;
+                    }
+                } else {
+                    if (milesUntilServiceElement) {
+                        milesUntilServiceElement.textContent = '-';
+                        milesUntilServiceElement.className = 'stat-value';
+                    }
+                }
+            }
+        }
+    } catch (error) {
+        console.error('Error updating mileage summary:', error);
+    }
+}
+
+async function logMileageEntry() {
+    const mileageVehicleSelect = document.getElementById('mileage-vehicle-select');
+    const selectedVehicleId = mileageVehicleSelect ? mileageVehicleSelect.value : currentVehicleId;
+    const mileage = parseInt(currentMileageInput.value);
+    const date = mileageDateInput.value;
+    const notes = mileageNotesInput.value;
+    
+    if (!selectedVehicleId) {
+        alert('Please select a vehicle first');
+        return;
+    }
+    
+    if (!mileage || !date) {
+        alert('Please enter both mileage and date');
+        return;
+    }
+    
+    try {
+        const response = await fetch(API.mileage, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                vehicleId: selectedVehicleId,
+                mileage: mileage,
+                date: date,
+                notes: notes
+            })
+        });
+        
+        if (response.ok) {
+            alert('Mileage logged successfully!');
+            await loadLatestMileage();
+            await updateMileageSummary();
+            
+            // Also update the vehicle info to reflect new mileage if it's the current vehicle
+            if (selectedVehicleId === currentVehicleId) {
+                await displayVehicleInfo(currentVehicleId);
+            }
+        } else {
+            throw new Error('Failed to log mileage');
+        }
+    } catch (error) {
+        console.error('Error logging mileage:', error);
+        alert('Failed to log mileage. Please try again.');
+    }
+}
+
+        document.getElementById('modal-backdrop').addEventListener('click', closeModal);
+        document.querySelectorAll('.modal-close').forEach(btn => {
+            btn.addEventListener('click', closeModal);
+        });
+
+        // Sample interactions
+        document.getElementById('add-maintenance').addEventListener('click', () => {
+            openModal('sample-modal');
+        });
+
+
+
+async function fetchExpiryData() {
+    dashboardData.insuranceData = [];
+    dashboardData.taxData = [];
+    
+    for (const vehicle of dashboardData.vehicles) {
+        try {
+            // Fetch insurance data
+            const insuranceResponse = await fetch(`${API.vehicles}/${vehicle._id}/insurance`);
+            if (insuranceResponse.ok) {
+                const insuranceData = await insuranceResponse.json();
+                dashboardData.insuranceData.push(insuranceData);
+            } else {
+                dashboardData.insuranceData.push([]);
+            }
+            
+            // Fetch tax data
+            const taxResponse = await fetch(`${API.vehicles}/${vehicle._id}/taxes`);
+            if (taxResponse.ok) {
+                const taxData = await taxResponse.json();
+                dashboardData.taxData.push(taxData);
+            } else {
+                dashboardData.taxData.push([]);
+            }
+            
         } catch (error) {
-            console.error('Error initializing app:', error);
-            alert('There was an error initializing the application. Please try again later.');
+            console.error(`Error fetching data for vehicle ${vehicle._id}:`, error);
+            dashboardData.insuranceData.push([]);
+            dashboardData.taxData.push([]);
         }
     }
+}
 
-   
+function renderDashboardTable() {
+    const tbody = dashboardTable.querySelector('tbody');
+    tbody.innerHTML = '';
+    
+    if (dashboardData.vehicles.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="no-data">No vehicles found</td></tr>';
+        return;
+    }
+    
+    dashboardData.vehicles.forEach((vehicle, index) => {
+        const insurance = getLatestInsurance(index);
+        const tax = getLatestTax(index);
+        
+        const row = createDashboardRow(vehicle, insurance, tax);
+        tbody.appendChild(row);
+    });
+}
+
+function getLatestInsurance(vehicleIndex) {
+    const insurances = dashboardData.insuranceData[vehicleIndex] || [];
+    return insurances.sort((a, b) => new Date(b.expiryDate) - new Date(a.expiryDate))[0];
+}
+
+function getLatestTax(vehicleIndex) {
+    const taxes = dashboardData.taxData[vehicleIndex] || [];
+    return taxes.sort((a, b) => new Date(b.expiryDate) - new Date(a.expiryDate))[0];
+}
+
+function createDashboardRow(vehicle, insurance, tax) {
+    const row = document.createElement('tr');
+    
+    const insuranceStatus = getStatusInfo(insurance?.expiryDate);
+    const taxStatus = getStatusInfo(tax?.expiryDate);
+    
+    row.innerHTML = `
+        <td>${vehicle.year} ${vehicle.make} ${vehicle.model}</td>
+        <td>${vehicle.plate}</td>
+        <td>${vehicle.engine || '-'}</td>
+        <td>${vehicle.chasis || '-'}</td>
+        <td class="${insuranceStatus.class}">
+            ${insurance ? formatDate(insurance.expiryDate) : 'No data'}
+            ${insuranceStatus.days > 0 ? ` (${insuranceStatus.days}d)` : insuranceStatus.days < 0 ? ` (${Math.abs(insuranceStatus.days)}d ago)` : ''}
+        </td>
+        <td class="${taxStatus.class}">
+            ${tax ? formatDate(tax.expiryDate) : 'No data'}
+            ${taxStatus.days > 0 ? ` (${taxStatus.days}d)` : taxStatus.days < 0 ? ` (${Math.abs(taxStatus.days)}d ago)` : ''}
+        </td>
+        <td>${vehicle.status}</td>
+    `;
+    
+    return row;
+}
+
+function getStatusInfo(dateString) {
+    if (!dateString) return { class: 'status-neutral', days: 0 };
+    
+    const expiryDate = new Date(dateString);
+    const today = new Date();
+    const daysUntil = Math.ceil((expiryDate - today) / (1000 * 60 * 60 * 24));
+    
+    if (daysUntil < 0) {
+        return { class: 'status-expired', days: daysUntil };
+    } else if (daysUntil <= 30) {
+        return { class: 'status-warning', days: daysUntil };
+    } else {
+        return { class: 'status-good', days: daysUntil };
+    }
+}
+
+function formatDate(dateString) {
+    if (!dateString) return '-';
+    return new Date(dateString).toLocaleDateString();
+}
+
+function showDashboardLoading() {
+    dashboardTable.classList.add('loading');
+    if (dashboardRefreshBtn) dashboardRefreshBtn.disabled = true;
+}
+
+function hideDashboardLoading() {
+    dashboardTable.classList.remove('loading');
+    if (dashboardRefreshBtn) dashboardRefreshBtn.disabled = false;
+}
+
+function showError(message) {
+    console.error(message);
+}
+
+// Update your initApp function
+async function initApp() {
+    try {
+        setupEventListeners();
+        await populateVehicleDropdown();
+        await refreshDashboard(); // Add this line
+        
+        addDeleteVehicleButton();
+
+        if (currentVehicleId) {
+            await displayLocationLogs(currentVehicleId);
+        }
+    } catch (error) {
+        console.error('Error initializing app:', error);
+        alert('There was an error initializing the application. Please try again later.');
+    }
+}
+
+
+
 
     // Add delete vehicle button to the vehicle info card
     function addDeleteVehicleButton() {
@@ -106,218 +501,285 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Populate vehicle dropdown with vehicles from API
     async function populateVehicleDropdown() {
-        try {
-            // Fetch vehicles from API
-            const response = await fetch(API.vehicles);
-            if (!response.ok) throw new Error('Failed to fetch vehicles');
-            
-            const vehicles = await response.json();
-            
-            // Clear existing options except the default and "Add New"
-            while (vehicleSelect.options.length > 2) {
-                vehicleSelect.remove(1);
-            }
-            
-            // Make sure we have the "Add New" option at position 1
-            if (vehicleSelect.options.length < 2 || vehicleSelect.options[1].value !== "new") {
-                const newOption = document.createElement('option');
-                newOption.value = "new";
-                newOption.textContent = "+ Add New Vehicle";
-                if (vehicleSelect.options.length > 1) {
-                    vehicleSelect.insertBefore(newOption, vehicleSelect.options[1]);
-                } else {
-                    vehicleSelect.appendChild(newOption);
-                }
-            }
-            
-            // Add vehicle options
-            vehicles.forEach(vehicle => {
-                const option = document.createElement('option');
-                option.value = vehicle._id;
-                option.textContent = `${vehicle.year} ${vehicle.make} ${vehicle.model} ${vehicle.engine} ${vehicle.chasis} (${vehicle.plate})`;
-                vehicleSelect.appendChild(option);
-            });
-            
-            // Set default vehicle if available
-            if (vehicles.length > 0) {
-                vehicleSelect.value = vehicles[0]._id;
-                currentVehicleId = vehicles[0]._id;
-                await displayVehicleInfo(vehicles[0]._id);
-                await displayMaintenanceLogs(vehicles[0]._id);
-                await displayFuelLogs(vehicles[0]._id);
-                await displayRoadTaxLogs(vehicles[0]._id);
-                await displayInsuranceLogs(vehicles[0]._id);
-            }
-            
-            console.log("Vehicle dropdown populated with", vehicleSelect.options.length, "options");
-            
-        } catch (error) {
-            console.error('Error populating vehicle dropdown:', error);
-            alert('Failed to load vehicles. Please refresh the page and try again.');
+    try {
+        // Fetch vehicles from API
+        const response = await fetch(API.vehicles);
+        if (!response.ok) throw new Error('Failed to fetch vehicles');
+        
+        const vehicles = await response.json();
+        
+        // Clear all options except the default first option
+        vehicleSelect.innerHTML = '<option value="">-- Select a Vehicle --</option>';
+        
+        // Only populate mileage selector if it exists
+        const mileageVehicleSelect = document.getElementById('mileage-vehicle-select');
+        if (mileageVehicleSelect) {
+            mileageVehicleSelect.innerHTML = '<option value="">-- Select Vehicle --</option>';
         }
+        
+        // Add "Add New Vehicle" option to main selector only
+        const newOption = document.createElement('option');
+        newOption.value = "new";
+        newOption.textContent = "+ Add New Vehicle";
+        vehicleSelect.appendChild(newOption);
+        
+        // Add vehicle options to both selectors
+        vehicles.forEach(vehicle => {
+            const option = document.createElement('option');
+            option.value = vehicle._id;
+            option.textContent = `${vehicle.year} ${vehicle.make} ${vehicle.model} ${vehicle.engine} ${vehicle.chasis} (${vehicle.plate})`;
+            vehicleSelect.appendChild(option);
+            
+            // Add to mileage vehicle selector too (only if it exists)
+            if (mileageVehicleSelect) {
+                const mileageOption = option.cloneNode(true);
+                mileageVehicleSelect.appendChild(mileageOption);
+            }
+        });
+        
+        // Set default vehicle if available
+        if (vehicles.length > 0) {
+            vehicleSelect.value = vehicles[0]._id;
+            currentVehicleId = vehicles[0]._id;
+            await displayVehicleInfo(vehicles[0]._id);
+            await displayMaintenanceLogs(vehicles[0]._id);
+            await displayFuelLogs(vehicles[0]._id);
+            await displayRoadTaxLogs(vehicles[0]._id);
+            await displayInsuranceLogs(vehicles[0]._id);
+            await displayLocationLogs(vehicles[0]._id);
+        }
+        
+        console.log("Vehicle dropdown populated with", vehicleSelect.options.length, "options");
+        
+    } catch (error) {
+        console.error('Error populating vehicle dropdown:', error);
+        alert('Failed to load vehicles. Please refresh the page and try again.');
+    }
+}
+
+// Set up event listeners with null checks
+function setupEventListeners() {
+    // Vehicle selection change
+    if (vehicleSelect) {
+        vehicleSelect.addEventListener('change', handleVehicleSelect);
     }
 
-    // Set up event listeners
-    function setupEventListeners() {
-        // Vehicle selection change
-        vehicleSelect.addEventListener('change', handleVehicleSelect);
-        
-        // Vehicle info edit controls
-        toggleEditBtn.addEventListener('click', toggleVehicleEditMode);
-        saveVehicleBtn.addEventListener('click', saveVehicleInfo);
-        cancelEditBtn.addEventListener('click', cancelVehicleEdit);
-        
-        // Maintenance log controls
-        addLogEntryBtn.addEventListener('click', () => openEntryModal());
-        
-        // Maintenance form submission
+    const viewDateReadingBtn = document.getElementById('view-date-reading');
+if (viewDateReadingBtn) {
+    viewDateReadingBtn.addEventListener('click', viewHistoricalReading);
+}
+
+const mileageVehicleSelect = document.getElementById('mileage-vehicle-select');
+if (mileageVehicleSelect) {
+    mileageVehicleSelect.addEventListener('change', async function() {
+        await loadLatestMileage();
+        await updateMileageSummary();
+    });
+}
+
+// Also add this to set today's date by default in the browse field
+const browseDateInput = document.getElementById('browse-date');
+if (browseDateInput) {
+    browseDateInput.value = new Date().toISOString().split('T')[0];
+}
+    
+    // Vehicle info edit controls
+    if (toggleEditBtn) toggleEditBtn.addEventListener('click', toggleVehicleEditMode);
+    if (saveVehicleBtn) saveVehicleBtn.addEventListener('click', saveVehicleInfo);
+    if (cancelEditBtn) cancelEditBtn.addEventListener('click', cancelVehicleEdit);
+    
+    // Maintenance log controls
+    if (addLogEntryBtn) addLogEntryBtn.addEventListener('click', () => openEntryModal());
+    
+    // Maintenance form submission
+    if (maintenanceForm) {
         maintenanceForm.addEventListener('submit', function(e) {
             e.preventDefault();
             saveMaintenanceEntry();
         });
-        
-        document.getElementById('cancel-entry').addEventListener('click', closeEntryModal);
-        
-        document.querySelectorAll('.modal .close').forEach(btn => {
-            btn.addEventListener('click', function() {
-                entryModal.style.display = 'none';
-                vehicleModal.style.display = 'none';
-            });
+    }
+    
+    const cancelEntryBtn = document.getElementById('cancel-entry');
+    if (cancelEntryBtn) {
+        cancelEntryBtn.addEventListener('click', closeEntryModal);
+    }
+    
+    // Modal close buttons
+    document.querySelectorAll('.modal .close').forEach(btn => {
+        btn.addEventListener('click', function() {
+            if (entryModal) entryModal.style.display = 'none';
+            if (vehicleModal) vehicleModal.style.display = 'none';
+            if (taxModal) taxModal.style.display = 'none';
+            if (fuelModal) fuelModal.style.display = 'none';
+            if (insuranceModal) insuranceModal.style.display = 'none';
+            if (locationModal) locationModal.style.display = 'none';
         });
+    });
 
-        
-
-        // Road tax controls
-        addTaxEntryBtn.addEventListener('click', () => openTaxModal());
-        
-        // Road tax form submission
+    // Road tax controls
+    if (addTaxEntryBtn) addTaxEntryBtn.addEventListener('click', () => openTaxModal());
+    
+    // Road tax form submission
+    if (roadTaxForm) {
         roadTaxForm.addEventListener('submit', function(e) {
             e.preventDefault();
             saveRoadTaxEntry();
         });
-        document.getElementById('cancel-tax').addEventListener('click', closeTaxModal);
-         
+    }
+    
+    const cancelTaxBtn = document.getElementById('cancel-tax');
+    if (cancelTaxBtn) {
+        cancelTaxBtn.addEventListener('click', closeTaxModal);
+    }
+     
     // Add event delegation for road tax log actions
-    taxEntriesContainer.addEventListener('click', function(e) {
-        // Check if clicked element or its parent is an edit button
-        const editBtn = e.target.closest('.edit-tax');
-        if (editBtn) {
-            const row = editBtn.closest('tr');
-            const entryId = row.dataset.id;
-            openTaxModal(entryId);
-            return;
-        }
-        
-        // Check if clicked element or its parent is a delete button
-        const deleteBtn = e.target.closest('.delete-tax');
-        if (deleteBtn) {
-            const row = deleteBtn.closest('tr');
-            const entryId = row.dataset.id;
-            deleteRoadTaxEntry(entryId);
-            return;
-        }
-    });
+    if (taxEntriesContainer) {
+        taxEntriesContainer.addEventListener('click', function(e) {
+            const editBtn = e.target.closest('.edit-tax');
+            if (editBtn) {
+                const row = editBtn.closest('tr');
+                const entryId = row.dataset.id;
+                openTaxModal(entryId);
+                return;
+            }
+            
+            const deleteBtn = e.target.closest('.delete-tax');
+            if (deleteBtn) {
+                const row = deleteBtn.closest('tr');
+                const entryId = row.dataset.id;
+                deleteRoadTaxEntry(entryId);
+                return;
+            }
+        });
+    }
 
-        // Fuel log controls
-        addFuelEntryBtn.addEventListener('click', () => openFuelModal());
-    fuelForm.addEventListener('submit', function(e) {
-        e.preventDefault();
-        saveFuelEntry();
-    });
-    cancelFuelBtn.addEventListener('click', closeFuelModal);
+    // Fuel log controls
+    if (addFuelEntryBtn) addFuelEntryBtn.addEventListener('click', () => openFuelModal());
+    
+    if (fuelForm) {
+        fuelForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            saveFuelEntry();
+        });
+    }
+    
+    if (cancelFuelBtn) cancelFuelBtn.addEventListener('click', closeFuelModal);
 
     // Event delegation for fuel log actions
-    fuelEntriesContainer.addEventListener('click', function(e) {
-        const editBtn = e.target.closest('.edit-fuel');
-        if (editBtn) {
-            const row = editBtn.closest('tr');
-            const entryId = row.dataset.id;
-            openFuelModal(entryId);
-            return;
-        }
-        
-        const deleteBtn = e.target.closest('.delete-fuel');
-        if (deleteBtn) {
-            const row = deleteBtn.closest('tr');
-            const entryId = row.dataset.id;
-            deleteFuelEntry(entryId);
-            return;
-        }
-    });
+    if (fuelEntriesContainer) {
+        fuelEntriesContainer.addEventListener('click', function(e) {
+            const editBtn = e.target.closest('.edit-fuel');
+            if (editBtn) {
+                const row = editBtn.closest('tr');
+                const entryId = row.dataset.id;
+                openFuelModal(entryId);
+                return;
+            }
+            
+            const deleteBtn = e.target.closest('.delete-fuel');
+            if (deleteBtn) {
+                const row = deleteBtn.closest('tr');
+                const entryId = row.dataset.id;
+                deleteFuelEntry(entryId);
+                return;
+            }
+        });
+    }
     
-        //insurance
-        addInsuranceEntryBtn.addEventListener('click', () => openInsuranceModal());
+    // Insurance controls
+    if (addInsuranceEntryBtn) addInsuranceEntryBtn.addEventListener('click', () => openInsuranceModal());
+    
+    if (insuranceForm) {
         insuranceForm.addEventListener('submit', function(e) {
             e.preventDefault();
             saveInsuranceEntry();
         });
-        cancelInsuranceBtn.addEventListener('click', closeInsuranceModal);
+    }
+    
+    if (cancelInsuranceBtn) cancelInsuranceBtn.addEventListener('click', closeInsuranceModal);
 
-        // Add event delegation for insurance log actions
+    // Event delegation for insurance log actions
+    if (insuranceEntriesContainer) {
         insuranceEntriesContainer.addEventListener('click', function(e) {
-        const editBtn = e.target.closest('.edit-insurance');
-        if (editBtn) {
-            const row = editBtn.closest('tr');
-            const entryId = row.dataset.id;
-            openInsuranceModal(entryId);
-            return;
-        }
-        
-        const deleteBtn = e.target.closest('.delete-insurance');
-        if (deleteBtn) {
-            const row = deleteBtn.closest('tr');
-            const entryId = row.dataset.id;
-            deleteInsuranceEntry(entryId);
-            return;
-        }
-    });
-
-    //location
-    addLocationEntryBtn.addEventListener('click', () => openLocationModal());
-    locationForm.addEventListener('submit', function(e) {
-        e.preventDefault();
-        saveLocationEntry();
-    });
-    cancelLocationBtn.addEventListener('click', closeLocationModal);
-
-    // Add event delegation for location log actions
-    locationEntriesContainer.addEventListener('click', function(e) {
-        const editBtn = e.target.closest('.edit-location');
-        if (editBtn) {
-            const row = editBtn.closest('tr');
-            const entryId = row.dataset.id;
-            openLocationModal(entryId);
-            return;
-        }
-        
-        const deleteBtn = e.target.closest('.delete-location');
-        if (deleteBtn) {
-            const row = deleteBtn.closest('tr');
-            const entryId = row.dataset.id;
-            deleteLocationEntry(entryId);
-            return;
-        }
-    });
-
-        // Service description selection
-        document.getElementById('service-description').addEventListener('change', function() {
-            const otherField = document.getElementById('service-description-other');
-            otherField.style.display = this.value === 'other' ? 'block' : 'none';
+            const editBtn = e.target.closest('.edit-insurance');
+            if (editBtn) {
+                const row = editBtn.closest('tr');
+                const entryId = row.dataset.id;
+                openInsuranceModal(entryId);
+                return;
+            }
+            
+            const deleteBtn = e.target.closest('.delete-insurance');
+            if (deleteBtn) {
+                const row = deleteBtn.closest('tr');
+                const entryId = row.dataset.id;
+                deleteInsuranceEntry(entryId);
+                return;
+            }
         });
-        
-        // New vehicle form submission
+    }
+
+    // Location controls
+    if (addLocationEntryBtn) addLocationEntryBtn.addEventListener('click', () => openLocationModal());
+    
+    if (locationForm) {
+        locationForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            saveLocationEntry();
+        });
+    }
+    
+    if (cancelLocationBtn) cancelLocationBtn.addEventListener('click', closeLocationModal);
+
+    // Event delegation for location log actions
+    if (locationEntriesContainer) {
+        locationEntriesContainer.addEventListener('click', function(e) {
+            const editBtn = e.target.closest('.edit-location');
+            if (editBtn) {
+                const row = editBtn.closest('tr');
+                const entryId = row.dataset.id;
+                openLocationModal(entryId);
+                return;
+            }
+            
+            const deleteBtn = e.target.closest('.delete-location');
+            if (deleteBtn) {
+                const row = deleteBtn.closest('tr');
+                const entryId = row.dataset.id;
+                deleteLocationEntry(entryId);
+                return;
+            }
+        });
+    }
+
+    // Service description selection
+    const serviceDescriptionSelect = document.getElementById('service-description');
+    if (serviceDescriptionSelect) {
+        serviceDescriptionSelect.addEventListener('change', function() {
+            const otherField = document.getElementById('service-description-other');
+            if (otherField) {
+                otherField.style.display = this.value === 'other' ? 'block' : 'none';
+            }
+        });
+    }
+    
+    // New vehicle form submission
+    if (newVehicleForm) {
         newVehicleForm.addEventListener('submit', function(e) {
             e.preventDefault();
             saveVehicle();
         });
-        
-        document.getElementById('cancel-vehicle').addEventListener('click', closeVehicleModal);
-        
-        // Add event delegation for maintenance log actions
+    }
+    
+    const cancelVehicleBtn = document.getElementById('cancel-vehicle');
+    if (cancelVehicleBtn) {
+        cancelVehicleBtn.addEventListener('click', closeVehicleModal);
+    }
+    
+    // Event delegation for maintenance log actions
+    if (logEntriesContainer) {
         logEntriesContainer.addEventListener('click', function(e) {
-            // Check if clicked element or its parent is an edit button
             const editBtn = e.target.closest('.edit-entry');
             if (editBtn) {
                 const row = editBtn.closest('tr');
@@ -326,7 +788,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
             
-            // Check if clicked element or its parent is a delete button
             const deleteBtn = e.target.closest('.delete-entry');
             if (deleteBtn) {
                 const row = deleteBtn.closest('tr');
@@ -335,31 +796,106 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
         });
-
-        
     }
 
-    // Handle vehicle selection change
-    async function handleVehicleSelect() {
-        const selectedValue = vehicleSelect.value;
-        console.log("Vehicle selected:", selectedValue);
+    // Dashboard refresh button - FIX FOR THE ERROR
+    if (dashboardRefreshBtn) {
+        dashboardRefreshBtn.addEventListener('click', refreshDashboard);
+    } else {
+        console.warn('Dashboard refresh button not found. Check if element with class "dashboard-refresh" exists.');
+    }
+
+    // Mileage tracking
+    if (logMileageBtn) {
+        logMileageBtn.addEventListener('click', logMileageEntry);
+    }
+    
+    if (mileageVehicleSelect) {
+        mileageVehicleSelect.addEventListener('change', async function() {
+            await loadLatestMileage();
+            await updateMileageSummary();
+        });
+    }
+    
+    // Tab functionality
+    document.querySelectorAll('.tab-button').forEach(button => {
+        button.addEventListener('click', () => {
+            const tabId = button.dataset.tab;
+
+            // Remove active class from all tabs and content
+            document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+            // Add active class to clicked tab and corresponding content
+            button.classList.add('active');
+            const tabContent = document.getElementById(tabId + '-tab');
+            if (tabContent) {
+                tabContent.classList.add('active');
+            }
+        });
+    });
+
+    // Modal backdrop click handler
+    const modalBackdrop = document.getElementById('modal-backdrop');
+    if (modalBackdrop) {
+        modalBackdrop.addEventListener('click', closeModal);
+    }
+    
+    // Modal close handlers
+    document.querySelectorAll('.modal-close').forEach(btn => {
+        btn.addEventListener('click', closeModal);
+    });
+
+    // Sample interactions - only if element exists
+    const addMaintenanceBtn = document.getElementById('add-maintenance');
+    if (addMaintenanceBtn) {
+        addMaintenanceBtn.addEventListener('click', () => {
+            openModal('sample-modal');
+        });
+    }
+}
+
+
+
+async function handleVehicleSelect() {
+    const selectedValue = vehicleSelect.value;
+    console.log("Vehicle selected:", selectedValue);
+    
+    if (selectedValue === 'new') {
+        // Open add new vehicle modal
+        openVehicleModal();
+        // Reset selection to previous vehicle or empty
+        if (currentVehicleId) {
+            vehicleSelect.value = currentVehicleId;
+        } else {
+            vehicleSelect.value = '';
+        }
+    } else if (selectedValue && selectedValue !== '') {
+        // Display selected vehicle info
+        currentVehicleId = selectedValue;
         
-        if (selectedValue === 'new') {
-            // Open add new vehicle modal
-            openVehicleModal();
-            // Reset selection
-            vehicleSelect.value = currentVehicleId || '';
-        } else if (selectedValue) {
-            // Display selected vehicle info
-            currentVehicleId = selectedValue;
-            await displayVehicleInfo(selectedValue);
-            await displayMaintenanceLogs(selectedValue);
-            await displayRoadTaxLogs(selectedValue);
-            await displayFuelLogs(selectedValue);
-            await displayInsuranceLogs(selectedValue);
-            await displayLocationLogs(selectedValue);
+        // Sync the mileage vehicle selector (only if it exists)
+        const mileageVehicleSelect = document.getElementById('mileage-vehicle-select');
+        if (mileageVehicleSelect) {
+            mileageVehicleSelect.value = selectedValue;
+        }
+        
+        await displayVehicleInfo(selectedValue);
+        await displayMaintenanceLogs(selectedValue);
+        await displayRoadTaxLogs(selectedValue);
+        await displayFuelLogs(selectedValue);
+        await displayInsuranceLogs(selectedValue);
+        await displayLocationLogs(selectedValue);
+        await initMileageTracker();
+    } else {
+        // Clear vehicle info if no selection
+        currentVehicleId = null;
+        const mileageVehicleSelect = document.getElementById('mileage-vehicle-select');
+        if (mileageVehicleSelect) {
+            mileageVehicleSelect.value = '';
         }
     }
+}
 
     // Display road tax logs for selected vehicle
     async function displayRoadTaxLogs(vehicleId) {
@@ -678,120 +1214,8 @@ async function displayLocationLogs(vehicleId) {
     }
 }
 
-async function openLocationModal(entryId) {
-    locationModalTitle.textContent = entryId ? 'Edit Location Entry' : 'Add Location Entry';
-    locationForm.reset();
-
-    if (entryId) {
-        try {
-            const response = await fetch(`${API.locations}/${entryId}`);
-            if (!response.ok) throw new Error('Failed to fetch location entry');
-            
-            const entry = await response.json();
-            
-            // Populate form
-            document.getElementById('location-from-date').value = new Date(entry.fromDate).toISOString().split('T')[0];
-            document.getElementById('location-to-date').value = new Date(entry.toDate).toISOString().split('T')[0];
-            document.getElementById('location').value = entry.location || '';
-            document.getElementById('location-agent').value = entry.agent || '';
-            document.getElementById('location-notes').value = entry.notes || '';
-            document.getElementById('location-entry-id').value = entry._id;
-            
-        } catch (error) {
-            console.error('Error fetching location entry:', error);
-            alert('Failed to load location entry. Please try again.');
-            closeLocationModal();
-            return;
-        }
-    } else {
-        // Set default values for new entry
-        document.getElementById('location-from-date').value = new Date().toISOString().split('T')[0];
-        document.getElementById('location-entry-id').value = '';
-    }
-    
-    locationModal.style.display = 'block';
-}
-
 function closeLocationModal() {
     locationModal.style.display = 'none';
-}
-
-async function saveLocationEntry() {
-    const entryId = document.getElementById('location-entry-id').value;
-    const vehicleId = currentVehicleId;
-    
-    if (!vehicleId) {
-        alert('Please select a vehicle first.');
-        closeLocationModal();
-        return;
-    }
-    
-    const locationData = {
-        vehicleId: vehicleId,
-        fromDate: document.getElementById('location-from-date').value,
-        toDate: document.getElementById('location-to-date').value,
-        location: document.getElementById('location').value,
-        agent: document.getElementById('location-agent').value,
-        notes: document.getElementById('location-notes').value
-    };
-    
-    if (!locationData.fromDate || !locationData.toDate || !locationData.location) {
-        alert('Please fill out all required fields.');
-        return;
-    }
-    
-    try {
-        let response;
-        
-        if (entryId) {
-            // Update existing entry
-            response = await fetch(`${API.locations}/${entryId}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(locationData)
-            });
-        } else {
-            // Create new entry
-            response = await fetch(API.locations, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(locationData)
-            });
-        }
-        
-        if (!response.ok) throw new Error('Failed to save location entry');
-        
-        await displayLocationLogs(vehicleId);
-        closeLocationModal();
-        alert(entryId ? 'Location entry updated successfully!' : 'Location entry added successfully!');
-        
-    } catch (error) {
-        console.error('Error saving location entry:', error);
-        alert('Failed to save location entry. Please try again.');
-    }
-}
-
-async function deleteLocationEntry(entryId) {
-    if (confirm('Are you sure you want to delete this location record? This action cannot be undone.')) {
-        try {
-            const response = await fetch(`${API.locations}/${entryId}`, {
-                method: 'DELETE'
-            });
-            
-            if (!response.ok) throw new Error('Failed to delete location entry');
-            
-            await displayLocationLogs(currentVehicleId);
-            alert('Location record deleted successfully!');
-            
-        } catch (error) {
-            console.error('Error deleting location entry:', error);
-            alert('Failed to delete location record. Please try again.');
-        }
-    }
 }
 
 async function openLocationModal(entryId) {
@@ -828,125 +1252,6 @@ async function openLocationModal(entryId) {
     locationModal.style.display = 'block';
 }
 
-function closeLocationModal() {
-    locationModal.style.display = 'none';
-}
-
-async function saveLocationEntry() {
-    const entryId = document.getElementById('location-entry-id').value;
-    const vehicleId = currentVehicleId;
-    
-    if (!vehicleId) {
-        alert('Please select a vehicle first.');
-        closeLocationModal();
-        return;
-    }
-    
-    const locationData = {
-        vehicleId: vehicleId,
-        fromDate: document.getElementById('location-from-date').value,
-        toDate: document.getElementById('location-to-date').value,
-        location: document.getElementById('location').value,
-        agent: document.getElementById('location-agent').value,
-        notes: document.getElementById('location-notes').value
-    };
-    
-    if (!locationData.fromDate || !locationData.toDate || !locationData.location) {
-        alert('Please fill out all required fields.');
-        return;
-    }
-    
-    try {
-        let response;
-        
-        if (entryId) {
-            // Update existing entry
-            response = await fetch(`${API.locations}/${entryId}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(locationData)
-            });
-        } else {
-            // Create new entry
-            response = await fetch(API.locations, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(locationData)
-            });
-        }
-        
-        if (!response.ok) throw new Error('Failed to save location entry');
-        
-        await displayLocationLogs(vehicleId);
-        closeLocationModal();
-        alert(entryId ? 'Location entry updated successfully!' : 'Location entry added successfully!');
-        
-    } catch (error) {
-        console.error('Error saving location entry:', error);
-        alert('Failed to save location entry. Please try again.');
-    }
-}
-
-async function deleteLocationEntry(entryId) {
-    if (confirm('Are you sure you want to delete this location record? This action cannot be undone.')) {
-        try {
-            const response = await fetch(`${API.locations}/${entryId}`, {
-                method: 'DELETE'
-            });
-            
-            if (!response.ok) throw new Error('Failed to delete location entry');
-            
-            await displayLocationLogs(currentVehicleId);
-            alert('Location record deleted successfully!');
-            
-        } catch (error) {
-            console.error('Error deleting location entry:', error);
-            alert('Failed to delete location record. Please try again.');
-        }
-    }
-}
-
-async function openLocationModal(entryId) {
-    locationModalTitle.textContent = entryId ? 'Edit Location Entry' : 'Add Location Entry';
-    locationForm.reset();
-
-    if (entryId) {
-        try {
-            const response = await fetch(`${API.locations}/${entryId}`);
-            if (!response.ok) throw new Error('Failed to fetch location entry');
-            
-            const entry = await response.json();
-            
-            // Populate form
-            document.getElementById('location-from-date').value = new Date(entry.fromDate).toISOString().split('T')[0];
-            document.getElementById('location-to-date').value = new Date(entry.toDate).toISOString().split('T')[0];
-            document.getElementById('location').value = entry.location || '';
-            document.getElementById('location-agent').value = entry.agent || '';
-            document.getElementById('location-notes').value = entry.notes || '';
-            document.getElementById('location-entry-id').value = entry._id;
-            
-        } catch (error) {
-            console.error('Error fetching location entry:', error);
-            alert('Failed to load location entry. Please try again.');
-            closeLocationModal();
-            return;
-        }
-    } else {
-        // Set default values for new entry
-        document.getElementById('location-from-date').value = new Date().toISOString().split('T')[0];
-        document.getElementById('location-entry-id').value = '';
-    }
-    
-    locationModal.style.display = 'block';
-}
-
-function closeLocationModal() {
-    locationModal.style.display = 'none';
-}
 
 async function saveLocationEntry() {
     const entryId = document.getElementById('location-entry-id').value;
@@ -1126,13 +1431,6 @@ async function deleteRoadTaxEntry(entryId) {
             console.error('Error deleting road tax entry:', error);
             alert('Failed to delete road tax record. Please try again.');
         }
-    }
-}
-
-// IMPORTANT: Replace the incomplete deleteTaxEntry function at the end of script.js with this:
-function deleteTaxEntry(entryId) {
-    if (confirm('Are you sure you want to delete this road tax record? This action cannot be undone.')) {
-        deleteRoadTaxEntry(entryId);
     }
 }
 
@@ -1835,7 +2133,63 @@ async function deleteInsuranceEntry(entryId) {
 }
 });
 
+async function initMileageTracker() {
+    // Set the mileage vehicle selector to match the main vehicle selector
+    if (currentVehicleId) {
+        mileageVehicleSelect.value = currentVehicleId;
+        await loadLatestMileage();
+        await updateMileageSummary();
+    }
+}
 
+async function viewHistoricalReading() {
+    const mileageVehicleSelect = document.getElementById('mileage-vehicle-select');
+    const selectedVehicleId = mileageVehicleSelect ? mileageVehicleSelect.value : currentVehicleId;
+    const selectedDate = document.getElementById('browse-date').value;
+    
+    if (!selectedVehicleId) {
+        alert('Please select a vehicle first');
+        return;
+    }
+    
+    if (!selectedDate) {
+        alert('Please select a date to view');
+        return;
+    }
+    
+    try {
+        const response = await fetch(`${API.mileageByDate}?vehicleId=${selectedVehicleId}&date=${selectedDate}`);
+        
+        if (response.ok) {
+            const mileageData = await response.json();
+            displayHistoricalReading(mileageData, selectedDate);
+        } else {
+            displayHistoricalReading(null, selectedDate);
+        }
+    } catch (error) {
+        console.error('Error fetching historical mileage:', error);
+        alert('Failed to fetch mileage data. Please try again.');
+    }
+}
+
+function displayHistoricalReading(data, date) {
+    const historicalDisplay = document.getElementById('historical-reading');
+    const readingDateSpan = document.getElementById('reading-date');
+    const readingMileageSpan = document.getElementById('reading-mileage');
+    const readingNotesSpan = document.getElementById('reading-notes');
+    
+    readingDateSpan.textContent = new Date(date).toLocaleDateString();
+    
+    if (data) {
+        readingMileageSpan.textContent = data.mileage.toLocaleString() + ' km';
+        readingNotesSpan.textContent = data.notes ? `Notes: ${data.notes}` : '';
+        historicalDisplay.style.display = 'block';
+    } else {
+        readingMileageSpan.textContent = 'No reading found';
+        readingNotesSpan.textContent = '';
+        historicalDisplay.style.display = 'block';
+    }
+}
 
 
 function deleteTaxEntry(entryId) {

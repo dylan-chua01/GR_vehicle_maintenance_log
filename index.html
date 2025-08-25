@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,27 +8,146 @@
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
+
 <body>
     <div class="container">
         <header>
             <h1><i class="fas fa-truck"></i> Go Rush Fleet Maintenance System</h1>
+        </header>
 
-                </div>
-                <div id="search-results" class="search-results-container" style="display:none;">
-                    <div class="search-results-header">
-                        <h3>Search Results</h3>
-                        <button id="close-search" class="btn-icon">
-                            <i class="fas fa-times"></i>
-                        </button>
+        <!-- Dashboard Section -->
+        <section class="dashboard-section">
+            <div class="dashboard">
+                <div class="dashboard-header">
+                    <div class="dashboard-title">
+                        <i class="fas fa-chart-line"></i> Fleet Overview
                     </div>
-                    <div id="search-results-content" class="search-results-content">
-                        <!-- Results will be populated here -->
+                    <button class="dashboard-refresh">
+                        <i class="fas fa-sync-alt"></i> Refresh
+                    </button>
+                </div>
+
+                <div class="dashboard-table-container">
+                    <table id="dashboard-table" class="dashboard-table">
+                        <thead>
+                            <tr>
+                                <th>Vehicle</th>
+                                <th>Plate</th>
+                                <th>Engine</th>
+                                <th>Chasis</th>
+                                <th>Insurance Expiry</th>
+                                <th>Road Tax Expiry</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td colspan="7" class="no-data">Loading vehicles...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <div id="search-results" class="search-results-container" style="display:none;">
+            <div class="search-results-header">
+                <h3>Search Results</h3>
+                <button id="close-search" class="btn-icon">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div id="search-results-content" class="search-results-content">
+                <!-- Results will be populated here -->
+            </div>
+        </div>
+
+        <div class="section-divider"></div>
+
+        <!-- Daily Mileage Tracker Card -->
+        <div class="card mileage-tracker-card">
+            <div class="card-header collapsible-header" id="mileage-tracker-header">
+                <h3 class="card-title"><i class="fas fa-tachometer-alt"></i> Daily Mileage Tracker</h3>
+                <button class="collapse-toggle">
+                    <i class="fas fa-chevron-down"></i>
+                </button>
+            </div>
+            <div class="card-body collapsible-content" id="mileage-tracker-content" style="display: none;">
+                <div class="mileage-browser">
+                    <div class="form-group">
+                        <label for="browse-date">Browse Historical Readings</label>
+                        <div class="date-browser-controls">
+                            <input type="date" id="browse-date" class="form-input">
+                            <button id="view-date-reading" class="btn btn-secondary">View Reading</button>
+                        </div>
+                    </div>
+                    <div id="historical-reading" class="historical-display" style="display:none;">
+                        <div class="reading-info">
+                            <span class="reading-label">Mileage on <span id="reading-date"></span>:</span>
+                            <span class="reading-value" id="reading-mileage">-</span>
+                            <span class="reading-notes" id="reading-notes"></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="mileage-vehicle-select">Select Vehicle for Mileage Tracking:</label>
+                    <select id="mileage-vehicle-select" class="form-input">
+                        <option value="">-- Select Vehicle --</option>
+                    </select>
+                </div>
+                <div class="form-divider"></div>
+
+                <div class="form-group">
+                    <label for="current-mileage">Current Mileage</label>
+                    <input type="number" id="current-mileage" class="form-input" placeholder="Enter current mileage">
+                </div>
+                <div class="form-group">
+                    <label for="mileage-date">Date</label>
+                    <input type="date" id="mileage-date" class="form-input">
+                </div>
+                <div class="form-group">
+                    <label for="mileage-notes">Notes (Optional)</label>
+                    <input type="text" id="mileage-notes" class="form-input" placeholder="Any notes about this reading">
+                </div>
+                <div class="button-container">
+                    <button id="submit-mileage-reading" class="btn btn-primary">Log Mileage</button>
+                </div>
+
+                <div class="mileage-summary">
+                    <div class="mileage-stat">
+                        <span class="stat-label">Last Recorded Mileage</span>
+                        <span class="stat-value" id="last-mileage">-</span>
+                    </div>
+                    <div class="mileage-stat">
+                        <span class="stat-label">Next Service At</span>
+                        <span class="stat-value" id="next-service-mileage">-</span>
+                    </div>
+                    <div class="mileage-stat">
+                        <span class="stat-label">Miles Until Service</span>
+                        <span class="stat-value" id="miles-until-service">-</span>
                     </div>
                 </div>
             </div>
-        </header>
+        </div>
+    </div>
 
-        <!-- Vehicle Selection Dropdown -->
+    <div class="section-divider" style="width: 93%; align-items: center; text-align: center; margin: 20px auto;"></div>
+
+    <!-- Vehicle Management Section - Collapsible -->
+    <div class="card vehicle-management-card" style="width: 93%; align-items: center; text-align: center; margin: 20px auto;">
+        <div class="card-header collapsible-header" id="vehicle-management-header">
+            <h3 class="card-title"><i class="fas fa-cogs"></i> Vehicle Management & Records</h3>
+            <button class="collapse-toggle">
+                <i class="fas fa-chevron-down"></i>
+            </button>
+        </div>
+        <div class="card-body collapsible-content" id="vehicle-management-content" style="display: none;">
+
+    <!-- Vehicle Selection Section -->
+    <section class="vehicle-selection-section">
+        <div class="section-header">
+            <h2><i class="fas fa-car"></i> Vehicle Selection</h2>
+        </div>
         <div class="form-group">
             <label for="vehicle-select">Select Vehicle:</label>
             <select id="vehicle-select" class="form-control">
@@ -35,11 +155,13 @@
                 <option value="new">+ Add New Vehicle</option>
             </select>
         </div>
+    </section>
 
-        <!-- Vehicle Information Card - Now Editable -->
+    <!-- Vehicle Information Section -->
+    <section class="vehicle-info-section">
         <div class="card vehicle-info">
             <div class="card-header">
-                <h2><i class="fas fa-car"></i> Vehicle Information</h2>
+                <h2  style="color: white;"><i class="fas fa-car"></i> Vehicle Information</h2>
                 <div class="card-actions">
                     <button id="toggle-edit" class="btn btn-secondary">
                         <i class="fas fa-edit"></i> Edit
@@ -69,13 +191,13 @@
                             </div>
                             <div class="info-item">
                                 <label for="input-model">Model:</label>
-                                <input type="text" id="input-model" class="form-input" value="Transit 350 Cargo" disabled>
+                                <input type="text" id="input-model" class="form-input" value="Transit 350 Cargo"
+                                    disabled>
                             </div>
                             <div class="info-item">
                                 <label for="input-plate">Plate/Reg #:</label>
                                 <input type="text" id="input-plate" class="form-input" value="FLT012" disabled>
                             </div>
-                            
                         </div>
                         <div class="info-group">
                             <div class="info-item">
@@ -104,26 +226,21 @@
                                 <label for="input-chasis">Chasis #:</label>
                                 <input type="text" id="input-chasis" class="form-input" value="" disabled>
                             </div>
-                           
                         </div>
                         <div class="info-group">
-    
                             <div class="info-item">
                                 <label for="input-acquisition-date">Acquisition Date:</label>
-                                <input type="date" id="input-acquisition-date" class="form-input" value="2022-01-01" disabled>
+                                <input type="date" id="input-acquisition-date" class="form-input" value="2022-01-01"
+                                    disabled>
                             </div>
-                            <!-- Display latest road tax and insurance -->
-                            <div class="info-group">
-                                <div class="info-item">
-                                    <label for="input-latest-tax">Latest Road Tax ID:</label>
-                                    <input type="text" id="input-latest-tax" class="form-input" disabled>
-                                </div>
-                                <div class="info-item">
-                                    <label for="input-latest-insurance">Latest Insurance ID:</label>
-                                    <input type="text" id="input-latest-insurance" class="form-input" disabled>
-                                </div>
+                            <div class="info-item">
+                                <label for="input-latest-tax">Latest Road Tax ID:</label>
+                                <input type="text" id="input-latest-tax" class="form-input" disabled>
                             </div>
-                            
+                            <div class="info-item">
+                                <label for="input-latest-insurance">Latest Insurance ID:</label>
+                                <input type="text" id="input-latest-insurance" class="form-input" disabled>
+                            </div>
                         </div>
                         <div class="info-group">
                             <div class="info-item">
@@ -136,25 +253,30 @@
                             <div class="info-item">
                                 <label for="input-next-service-mileage">Next Service Mileage:</label>
                                 <div class="input-with-unit">
-                                    <input type="number" id="input-next-service-mileage" class="form-input notice" disabled>
+                                    <input type="number" id="input-next-service-mileage" class="form-input notice"
+                                        disabled>
                                     <span class="unit">km</span>
                                 </div>
                             </div>
                             <div class="info-item">
                                 <label for="input-last-service">Last Service:</label>
-                                <input type="date" id="input-last-service" class="form-input" value="2023-12-21" disabled>
+                                <input type="date" id="input-last-service" class="form-input" value="2023-12-21"
+                                    disabled>
                             </div>
                             <div class="info-item">
                                 <label for="input-next-service">Next Service Due:</label>
-                                <input type="date" id="input-next-service" class="form-input notice" value="2024-01-15" disabled>
+                                <input type="date" id="input-next-service" class="form-input notice" value="2024-01-15"
+                                    disabled>
                             </div>
                         </div>
                     </div>
                 </form>
             </div>
         </div>
+    </section>
 
-        <!-- Maintenance Log with Add/Edit functionality -->
+    <!-- Maintenance Log Section -->
+    <section class="maintenance-section">
         <div class="card maintenance-log">
             <div class="card-header">
                 <h2 style="color: white;"><i class="fas fa-clipboard-list"></i> Maintenance Log</h2>
@@ -177,7 +299,6 @@
                             </tr>
                         </thead>
                         <tbody id="log-entries">
-                            <!-- Sample Entry -->
                             <tr>
                                 <td>2023-12-21</td>
                                 <td>Oil Change & Tire Rotation</td>
@@ -194,148 +315,15 @@
                                     </button>
                                 </td>
                             </tr>
-                            <!-- Entries will be added here dynamically -->
                         </tbody>
                     </table>
                 </div>
             </div>
         </div>
+    </section>
 
-        <!-- Add/Edit Maintenance Entry Modal -->
-        <div id="entry-modal" class="modal">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h3 id="modal-title">Add Maintenance Entry</h3>
-                    <span class="close">&times;</span>
-                </div>
-                <div class="modal-body">
-                    <form id="maintenance-form">
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="service-date">Date:</label>
-                                <input type="date" id="service-date" class="form-control" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="service-odometer">Odometer:</label>
-                                <div class="input-with-unit">
-                                    <input type="number" id="service-odometer" class="form-control" required>
-                                    <span class="unit">km</span>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="service-description">Description:</label>
-                            <select id="service-description" class="form-control" required>
-                                <option value="">-- Select Service --</option>
-                                <option value="Oil Change">Oil Change</option>
-                                <option value="Tire Rotation">Tire Rotation</option>
-                                <option value="Brake Service">Brake Service</option>
-                                <option value="Air Filter Replacement">Air Filter Replacement</option>
-                                <option value="other">Other (specify below)</option>
-                            </select>
-                            <input type="text" id="service-description-other" class="form-control" style="margin-top:5px;display:none;" placeholder="Enter service description">
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="service-provider">Service Provider:</label>
-                            <input type="text" id="service-provider" class="form-control">
-                        </div>
-                        
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="service-cost">Cost:</label>
-                                <div class="input-with-unit">
-                                    <span class="unit">$</span>
-                                    <input type="number" step="0.01" id="service-cost" class="form-control">
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label for="service-next-due">Next Service Due:</label>
-                                <input type="date" id="service-next-due" class="form-control">
-                            </div>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="service-notes">Notes:</label>
-                            <textarea id="service-notes" class="form-control" rows="3"></textarea>
-                        </div>
-                        
-                        <div class="form-actions">
-                            <button type="submit" class="btn btn-success">Save Entry</button>
-                            <button type="button" class="btn btn-secondary" id="cancel-entry">Cancel</button>
-                        </div>
-                        <input type="hidden" id="entry-id" value="">
-                    </form>
-                </div>
-            </div>
-        </div>
-
-        <!-- Add/Edit Vehicle Modal -->
-        <div id="vehicle-modal" class="modal">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h3 id="vehicle-modal-title">Add New Vehicle</h3>
-                    <span class="close">&times;</span>
-                </div>
-                <div class="modal-body">
-                    <form id="new-vehicle-form">
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="new-vehicle-year">Year:</label>
-                                <input type="number" id="new-vehicle-year" class="form-control" min="1900" max="2030" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="new-vehicle-make">Make:</label>
-                                <input type="text" id="new-vehicle-make" class="form-control" required>
-                            </div>
-                        </div>
-                        
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="new-vehicle-model">Model:</label>
-                                <input type="text" id="new-vehicle-model" class="form-control" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="new-vehicle-plate">Plate/Reg #:</label>
-                                <input type="text" id="new-vehicle-plate" class="form-control" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="new-vehicle-engine">Engine #:</label>
-                                <input type="text" id="new-vehicle-engine" class="form-control" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="new-vehicle-chasis">Chasis #:</label>
-                                <input type="text" id="new-vehicle-chasis" class="form-control" required>
-                            </div>
-                        </div>
-
-                        <!-- In the new-vehicle-form in the vehicle-modal -->
-                        <div class="form-group">
-                            <label for="new-vehicle-status">Status:</label>
-                            <select id="new-vehicle-status" class="form-control">
-                                <option value="active" selected>Active</option>
-                                <option value="inactive">Inactive</option>
-                                <option value="maintenance">In Maintenance</option>
-                                <option value="retired">Retired</option>
-                            </select>
-                        </div>
-                        
-                        
-                        <div class="form-actions">
-                            <button type="submit" class="btn btn-success">Save Vehicle</button>
-                            <button type="button" class="btn btn-secondary" id="cancel-vehicle">Cancel</button>
-                        </div>
-
-                        
-                        
-                        <input type="hidden" id="edit-vehicle-id" value="">
-                    </form>
-                </div>
-            </div>
-        </div>
-
-        <!-- Road Tax -->
+    <!-- Road Tax Section -->
+    <section class="road-tax-section">
         <div class="card road-tax-log">
             <div class="card-header">
                 <h2 style="color: white;"><i class="fas fa-receipt"></i> Road Tax Log</h2>
@@ -363,302 +351,445 @@
                 </div>
             </div>
         </div>
-        
-        <!-- Add/Edit Road Tax Modal -->
-        <div id="tax-modal" class="modal">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h3 id="tax-modal-title">Add Road Tax Entry</h3>
-                    <span class="close">&times;</span>
-                </div>
-                <div class="modal-body">
-                    <form id="road-tax-form">
-                        <div class="form-group">
-                            <label for="tax-id">Road Tax ID:</label>
-                            <input type="text" id="tax-id" class="form-control" required>
-                        </div>
-                        
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="renewal-date">Renewal Date:</label>
-                                <input type="date" id="renewal-date" class="form-control" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="expiry-date">Expiry Date:</label>
-                                <input type="date" id="expiry-date" class="form-control" required>
-                            </div>
-                        </div>
-                        
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="tax-cost">Cost:</label>
-                                <div class="input-with-unit">
-                                    <span class="unit">$</span>
-                                    <input type="number" step="0.01" id="tax-cost" class="form-control" required>
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label for="tax-agent">Agent:</label>
-                                <input type="text" id="tax-agent" class="form-control">
-                            </div>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="tax-notes">Notes:</label>
-                            <textarea id="tax-notes" class="form-control" rows="3"></textarea>
-                        </div>
-                        
-                        <div class="form-actions">
-                            <button type="submit" class="btn btn-success">Save Entry</button>
-                            <button type="button" class="btn btn-secondary" id="cancel-tax">Cancel</button>
-                        </div>
-                        <input type="hidden" id="tax-entry-id" value="">
-                    </form>
+    </section>
+
+    <!-- Fuel Log Section -->
+    <section class="fuel-section">
+        <div class="card fuel-log">
+            <div class="card-header">
+                <h2 style="color: white;"><i class="fas fa-gas-pump"></i> Fuel Log</h2>
+                <button id="add-fuel-entry" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Add Entry
+                </button>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table id="fuel-table">
+                        <thead>
+                            <tr>
+                                <th>Fuel Receipt</th>
+                                <th>Date</th>
+                                <th>Driver</th>
+                                <th>Fuel Cost</th>
+                                <th>Fuel Amount</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="fuel-entries">
+                            <!-- Entries will be added here dynamically -->
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
-        <!-- Fuel Log -->
-<div class="card fuel-log">
-    <div class="card-header">
-        <h2 style="color: white;"><i class="fas fa-receipt"></i> Fuel Log</h2>
-        <button id="add-fuel-entry" class="btn btn-primary">
-            <i class="fas fa-plus"></i> Add Entry
-        </button>
-    </div>
-    <div class="card-body">
-        <div class="table-responsive">
-            <table id="fuel-table">
-                <thead>
-                    <tr>
-                        <th>Fuel Receipt</th>
-                        <th>Date</th>
-                        <th>Driver</th>
-                        <th>Fuel Cost</th>
-                        <th>Fuel Amount</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="fuel-entries">
-                    <!-- Entries will be added here dynamically -->
-                </tbody>
-            </table>
-        </div>
-    </div>
-</div>
+    </section>
 
-<!-- Add/Edit Fuel Modal -->
-<div id="fuel-modal" class="modal">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h3 id="fuel-modal-title">Add Fuel Log</h3>
-            <span class="close">&times;</span>
-        </div>
-        <div class="modal-body">
-            <form id="fuel-form">
-                <div class="form-group">
-                    <label for="fuel-receipt">Fuel Receipt:</label>
-                    <input type="text" id="fuel-receipt" class="form-control" required>
+    <!-- Insurance Section -->
+    <section class="insurance-section">
+        <div class="card road-insurance-log">
+            <div class="card-header">
+                <h2 style="color: white;"><i class="fas fa-file-contract"></i> Insurance Log</h2>
+                <button id="add-insurance-entry" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Add Entry
+                </button>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table id="insurance-table">
+                        <thead>
+                            <tr>
+                                <th>Insurance ID</th>
+                                <th>Provider</th>
+                                <th>Renewal Date</th>
+                                <th>Expiry Date</th>
+                                <th>Cost</th>
+                                <th>Agent</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="insurance-entries">
+                            <!-- Entries will be added here dynamically -->
+                        </tbody>
+                    </table>
                 </div>
-                
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="fuel-date">Date:</label>
-                        <input type="date" id="fuel-date" class="form-control" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="fuel-driver">Driver:</label>
-                        <input type="text" id="fuel-driver" class="form-control" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="fuel-cost">Fuel Cost:</label>
-                        <div class="input-with-unit">
-                            <span class="unit">$</span>
-                            <input type="number" step="0.01" id="fuel-cost" class="form-control" required>
+            </div>
+        </div>
+    </section>
+
+    <!-- Location Log Section -->
+    <section class="location-section">
+        <div class="card location-log">
+            <div class="card-header">
+                <h2 style="color: white;"><i class="fas fa-map-marker-alt"></i> Location Log</h2>
+                <button id="add-location-entry" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Add Entry
+                </button>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table id="location-table">
+                        <thead>
+                            <tr>
+                                <th>From Date</th>
+                                <th>To Date</th>
+                                <th>Location</th>
+                                <th>Agent</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="location-entries">
+                            <!-- Entries will be added here dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Modals -->
+    <!-- Add/Edit Maintenance Entry Modal -->
+    <div id="entry-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-title">Add Maintenance Entry</h3>
+                <span class="close">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="maintenance-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="service-date">Date:</label>
+                            <input type="date" id="service-date" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="service-odometer">Odometer:</label>
+                            <div class="input-with-unit">
+                                <input type="number" id="service-odometer" class="form-control" required>
+                                <span class="unit">km</span>
+                            </div>
                         </div>
                     </div>
-                    <div class="form-group">
-                        <label for="fuel-amount">Fuel Amount:</label>
-                        <input type="text" id="fuel-amount" class="form-control" required>
-                    </div>
-                </div>
 
-                <div class="form-group">
-                    <label for="fuel-notes">Notes:</label>
-                    <textarea id="fuel-notes" class="form-control" rows="3"></textarea>
-                </div>
-                
-                <div class="form-actions">
-                    <button type="submit" class="btn btn-success">Save Entry</button>
-                    <button type="button" class="btn btn-secondary" id="cancel-fuel">Cancel</button>
-                </div>
-                <input type="hidden" id="fuel-entry-id" value="">
-            </form>
-        </div>
-    </div>
-</div>
-
-<!-- Insurance -->
-<div class="card road-insurance-log">
-    <div class="card-header">
-        <h2 style="color: white;"><i class="fas fa-receipt"></i> Insurance Log</h2>
-        <button id="add-insurance-entry" class="btn btn-primary">
-            <i class="fas fa-plus"></i> Add Entry
-        </button>
-    </div>
-    <div class="card-body">
-        <div class="table-responsive">
-            <table id="insurance-table">
-                <thead>
-                    <tr>
-                        <th>Insurance ID</th>
-                        <th>Provider</th>
-                        <th>Renewal Date</th>
-                        <th>Expiry Date</th>
-                        <th>Cost</th>
-                        <th>Agent</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="insurance-entries">
-                    <!-- Entries will be added here dynamically -->
-                </tbody>
-            </table>
-        </div>
-    </div>
-</div>
-
-<!-- Add/Edit Insurance Modal -->
-<div id="insurance-modal" class="modal">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h3 id="insurance-modal-title">Add Insurance Entry</h3>
-            <span class="close">&times;</span>
-        </div>
-        <div class="modal-body">
-            <form id="insurance-form">
-                <div class="form-group">
-                    <label for="insurance-id">Insurance ID:</label>
-                    <input type="text" id="insurance-id" class="form-control" required>
-                </div>
-                
-                <div class="form-group">
-                    <label for="insurance-id">Insurance Provider:</label>
-                    <input type="text" id="insurance-provider" class="form-control" required>
-                </div>
-                
-                <div class="form-row">
                     <div class="form-group">
-                        <label for="renewal-date">Renewal Date:</label>
-                        <input type="date" id="insurance-renewal-date" class="form-control" required>
+                        <label for="service-description">Description:</label>
+                        <select id="service-description" class="form-control" required>
+                            <option value="">-- Select Service --</option>
+                            <option value="Oil Change">Oil Change</option>
+                            <option value="Tire Rotation">Tire Rotation</option>
+                            <option value="Brake Service">Brake Service</option>
+                            <option value="Air Filter Replacement">Air Filter Replacement</option>
+                            <option value="other">Other (specify below)</option>
+                        </select>
+                        <input type="text" id="service-description-other" class="form-control"
+                            style="margin-top:5px;display:none;" placeholder="Enter service description">
                     </div>
+
                     <div class="form-group">
-                        <label for="expiry-date">Expiry Date:</label>
-                        <input type="date" id="insurance-expiry-date" class="form-control" required>
+                        <label for="service-provider">Service Provider:</label>
+                        <input type="text" id="service-provider" class="form-control">
                     </div>
-                </div>
-                
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="insurance-cost">Cost:</label>
-                        <div class="input-with-unit">
-                            <span class="unit">$</span>
-                            <input type="number" step="0.01" id="insurance-cost" class="form-control" required>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="service-cost">Cost:</label>
+                            <div class="input-with-unit">
+                                <span class="unit">$</span>
+                                <input type="number" step="0.01" id="service-cost" class="form-control">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="service-next-due">Next Service Due:</label>
+                            <input type="date" id="service-next-due" class="form-control">
                         </div>
                     </div>
+
                     <div class="form-group">
-                        <label for="insurance-agent">Agent:</label>
-                        <input type="text" id="insurance-agent" class="form-control">
+                        <label for="service-notes">Notes:</label>
+                        <textarea id="service-notes" class="form-control" rows="3"></textarea>
                     </div>
-                </div>
-                
-                <div class="form-group">
-                    <label for="insurance-notes">Notes:</label>
-                    <textarea id="insurance-notes" class="form-control" rows="3"></textarea>
-                </div>
-                
-                <div class="form-actions">
-                    <button type="submit" class="btn btn-success">Save Entry</button>
-                    <button type="button" class="btn btn-secondary" id="cancel-insurance">Cancel</button>
-                </div>
-                <input type="hidden" id="insurance-entry-id" value="">
-            </form>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-success">Save Entry</button>
+                        <button type="button" class="btn btn-secondary" id="cancel-entry">Cancel</button>
+                    </div>
+                    <input type="hidden" id="entry-id" value="">
+                </form>
+            </div>
         </div>
-    </div>
-        
     </div>
 
- <!-- Location -->
- <div class="card location-log">
-    <div class="card-header">
-        <h2 style="color: white;"><i class="fas fa-receipt"></i> Location Log</h2>
-        <button id="add-location-entry" class="btn btn-primary">
-            <i class="fas fa-plus"></i> Add Entry
-        </button>
-    </div>
-    <div class="card-body">
-        <div class="table-responsive">
-            <table id="location-table">
-                <thead>
-                    <tr>
-                        <th>From Date</th>
-                        <th>To Date</th>
-                        <th>Location</th>
-                        <th>Agent</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="location-entries">
-                    <!-- Entries will be added here dynamically -->
-                </tbody>
-            </table>
-        </div>
-    </div>
-</div>
+    <!-- Add/Edit Vehicle Modal -->
+    <div id="vehicle-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="vehicle-modal-title">Add New Vehicle</h3>
+                <span class="close">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="new-vehicle-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="new-vehicle-year">Year:</label>
+                            <input type="number" id="new-vehicle-year" class="form-control" min="1900" max="2030"
+                                required>
+                        </div>
+                        <div class="form-group">
+                            <label for="new-vehicle-make">Make:</label>
+                            <input type="text" id="new-vehicle-make" class="form-control" required>
+                        </div>
+                    </div>
 
-<!-- Add/Edit Location Modal -->
-<div id="location-modal" class="modal">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h3 id="location-modal-title">Add Location Entry</h3>
-            <span class="close">&times;</span>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="new-vehicle-model">Model:</label>
+                            <input type="text" id="new-vehicle-model" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="new-vehicle-plate">Plate/Reg #:</label>
+                            <input type="text" id="new-vehicle-plate" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="new-vehicle-engine">Engine #:</label>
+                            <input type="text" id="new-vehicle-engine" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="new-vehicle-chasis">Chasis #:</label>
+                            <input type="text" id="new-vehicle-chasis" class="form-control" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="new-vehicle-status">Status:</label>
+                        <select id="new-vehicle-status" class="form-control">
+                            <option value="active" selected>Active</option>
+                            <option value="inactive">Inactive</option>
+                            <option value="maintenance">In Maintenance</option>
+                            <option value="retired">Retired</option>
+                        </select>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-success">Save Vehicle</button>
+                        <button type="button" class="btn btn-secondary" id="cancel-vehicle">Cancel</button>
+                    </div>
+
+                    <input type="hidden" id="edit-vehicle-id" value="">
+                </form>
+            </div>
         </div>
-        <div class="modal-body">
-            <form id="location-form">
-                <div class="form-group">
-                    <label for="location-from-date">From Date:</label>
-                    <input type="date" id="location-from-date" class="form-control" required>
-                </div>
-                
-                <div class="form-group">
-                    <label for="location-to-date">To Date:</label>
-                    <input type="date" id="location-to-date" class="form-control" required>
-                </div>
-                
-                <div class="form-group">
-                    <label for="location">Location:</label>
-                    <input type="text" id="location" class="form-control" required>
-                </div>
-                
-                <div class="form-group">
-                    <label for="location-agent">Agent:</label>
-                    <input type="text" id="location-agent" class="form-control">
-                </div>
-                
-                <div class="form-group">
-                    <label for="location-notes">Notes:</label>
-                    <textarea id="location-notes" class="form-control" rows="3"></textarea>
-                </div>
-                
-                <div class="form-actions">
-                    <button type="submit" class="btn btn-success">Save Entry</button>
-                    <button type="button" class="btn btn-secondary" id="cancel-location">Cancel</button>
-                </div>
-                <input type="hidden" id="location-entry-id" value="">
-            </form>
+    </div>
+
+    <!-- Add/Edit Road Tax Modal -->
+    <div id="tax-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="tax-modal-title">Add Road Tax Entry</h3>
+                <span class="close">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="road-tax-form">
+                    <div class="form-group">
+                        <label for="tax-id">Road Tax ID:</label>
+                        <input type="text" id="tax-id" class="form-control" required>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="renewal-date">Renewal Date:</label>
+                            <input type="date" id="renewal-date" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="expiry-date">Expiry Date:</label>
+                            <input type="date" id="expiry-date" class="form-control" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="tax-cost">Cost:</label>
+                            <div class="input-with-unit">
+                                <span class="unit">$</span>
+                                <input type="number" step="0.01" id="tax-cost" class="form-control" required>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="tax-agent">Agent:</label>
+                            <input type="text" id="tax-agent" class="form-control">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="tax-notes">Notes:</label>
+                        <textarea id="tax-notes" class="form-control" rows="3"></textarea>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-success">Save Entry</button>
+                        <button type="button" class="btn btn-secondary" id="cancel-tax">Cancel</button>
+                    </div>
+                    <input type="hidden" id="tax-entry-id" value="">
+                </form>
+            </div>
         </div>
+    </div>
+
+    <!-- Add/Edit Fuel Modal -->
+    <div id="fuel-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="fuel-modal-title">Add Fuel Log</h3>
+                <span class="close">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="fuel-form">
+                    <div class="form-group">
+                        <label for="fuel-receipt">Fuel Receipt:</label>
+                        <input type="text" id="fuel-receipt" class="form-control" required>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="fuel-date">Date:</label>
+                            <input type="date" id="fuel-date" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="fuel-driver">Driver:</label>
+                            <input type="text" id="fuel-driver" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="fuel-cost">Fuel Cost:</label>
+                            <div class="input-with-unit">
+                                <span class="unit">$</span>
+                                <input type="number" step="0.01" id="fuel-cost" class="form-control" required>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="fuel-amount">Fuel Amount:</label>
+                            <input type="text" id="fuel-amount" class="form-control" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="fuel-notes">Notes:</label>
+                        <textarea id="fuel-notes" class="form-control" rows="3"></textarea>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-success">Save Entry</button>
+                        <button type="button" class="btn btn-secondary" id="cancel-fuel">Cancel</button>
+                    </div>
+                    <input type="hidden" id="fuel-entry-id" value="">
+                </form>
+            </div>
         </div>
+    </div>
+
+    <!-- Add/Edit Insurance Modal -->
+    <div id="insurance-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="insurance-modal-title">Add Insurance Entry</h3>
+                <span class="close">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="insurance-form">
+                    <div class="form-group">
+                        <label for="insurance-id">Insurance ID:</label>
+                        <input type="text" id="insurance-id" class="form-control" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="insurance-provider">Insurance Provider:</label>
+                        <input type="text" id="insurance-provider" class="form-control" required>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="insurance-renewal-date">Renewal Date:</label>
+                            <input type="date" id="insurance-renewal-date" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="insurance-expiry-date">Expiry Date:</label>
+                            <input type="date" id="insurance-expiry-date" class="form-control" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="insurance-cost">Cost:</label>
+                            <div class="input-with-unit">
+                                <span class="unit">$</span>
+                                <input type="number" step="0.01" id="insurance-cost" class="form-control" required>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="insurance-agent">Agent:</label>
+                            <input type="text" id="insurance-agent" class="form-control">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="insurance-notes">Notes:</label>
+                        <textarea id="insurance-notes" class="form-control" rows="3"></textarea>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-success">Save Entry</button>
+                        <button type="button" class="btn btn-secondary" id="cancel-insurance">Cancel</button>
+                    </div>
+                    <input type="hidden" id="insurance-entry-id" value="">
+                </form>
+            </div>
         </div>
+    </div>
+
+    <!-- Add/Edit Location Modal -->
+    <div id="location-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="location-modal-title">Add Location Entry</h3>
+                <span class="close">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="location-form">
+                    <div class="form-group">
+                        <label for="location-from-date">From Date:</label>
+                        <input type="date" id="location-from-date" class="form-control" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="location-to-date">To Date:</label>
+                        <input type="date" id="location-to-date" class="form-control" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="location">Location:</label>
+                        <input type="text" id="location" class="form-control" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="location-agent">Agent:</label>
+                        <input type="text" id="location-agent" class="form-control">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="location-notes">Notes:</label>
+                        <textarea id="location-notes" class="form-control" rows="3"></textarea>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-success">Save Entry</button>
+                        <button type="button" class="btn btn-secondary" id="cancel-location">Cancel</button>
+                    </div>
+                    <input type="hidden" id="location-entry-id" value="">
+                </form>
+            </div>
+        </div>
+    </div>
+    </div>
+    </div>
 
     <script src="script.js"></script>
 </body>
+
 </html>

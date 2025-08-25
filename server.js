@@ -3,9 +3,16 @@ const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
 const path = require('path');
 require('dotenv').config();
+const cors = require('cors');
+
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+app.use(cors());
+
+app.use(bodyParser.json());
+app.use(express.static(path.join(__dirname)));
 
 // Middleware
 app.use(bodyParser.json());
@@ -120,6 +127,19 @@ const locationSchema = new mongoose.Schema({
     createdAt: { type: Date, default: Date.now }
 });
 
+// daily mileage schema
+const mileageLogSchema = new mongoose.Schema({
+    vehicleId: { 
+        type: mongoose.Schema.Types.ObjectId, 
+        ref: 'Vehicle',
+        required: true
+    },
+    date: { type: Date, required: true, default: Date.now },
+    mileage: { type: Number, required: true },
+    notes: String,
+    createdAt: { type: Date, default: Date.now }
+});
+
 // Create models
 const Vehicle = mongoose.model('Vehicle', vehicleSchema);
 const MaintenanceLog = mongoose.model('MaintenanceLog', maintenanceLogSchema);
@@ -127,10 +147,10 @@ const RoadTax = mongoose.model('RoadTax', roadTaxSchema);
 const FuelLog = mongoose.model('FuelLog', fuelLogSchema);
 const Insurance = mongoose.model('Insurance', insuranceSchema);
 const Location = mongoose.model('Location', locationSchema);
+const MileageLog = mongoose.model('MileageLog', mileageLogSchema);
 
 // API Routes
 
-// GET all vehicles
 app.get('/api/vehicles', async (req, res) => {
     try {
         const vehicles = await Vehicle.find().sort({ createdAt: -1 });
@@ -141,7 +161,6 @@ app.get('/api/vehicles', async (req, res) => {
     }
 });
 
-// GET a specific vehicle
 app.get('/api/vehicles/:id', async (req, res) => {
     try {
         const vehicle = await Vehicle.findById(req.params.id);
@@ -154,6 +173,7 @@ app.get('/api/vehicles/:id', async (req, res) => {
         res.status(500).json({ message: 'Failed to fetch vehicle' });
     }
 });
+
 
 // POST a new vehicle
 app.post('/api/vehicles', async (req, res) => {
@@ -660,6 +680,83 @@ app.delete('/api/locations/:id', async (req, res) => {
         res.status(500).json({ message: 'Failed to delete location entry' });
     }
 });
+
+app.get('/api/mileage/latest', async (req, res) => {
+    try {
+        const { vehicleId } = req.query;
+        const latestMileage = await MileageLog.findOne({ 
+            vehicleId 
+        }).sort({ date: -1 });
+        
+        res.json(latestMileage);
+    } catch (error) {
+        console.error('Error fetching latest mileage:', error);
+        res.status(500).json({ message: 'Failed to fetch latest mileage' });
+    }
+});
+
+// POST a new mileage log entry
+app.post('/api/mileage', async (req, res) => {
+    try {
+        const newMileageLog = new MileageLog(req.body);
+        const savedMileageLog = await newMileageLog.save();
+        
+        // Update vehicle's current mileage
+        await Vehicle.findByIdAndUpdate(req.body.vehicleId, {
+            currentMileage: req.body.mileage
+        });
+        
+        res.status(201).json(savedMileageLog);
+    } catch (error) {
+        console.error('Error adding mileage log:', error);
+        res.status(500).json({ message: 'Failed to add mileage log' });
+    }
+});
+
+// GET all mileage logs for a vehicle
+app.get('/api/vehicles/:id/mileage', async (req, res) => {
+    try {
+        const mileageLogs = await MileageLog.find({ 
+            vehicleId: req.params.id 
+        }).sort({ date: -1 });
+        
+        res.json(mileageLogs);
+    } catch (error) {
+        console.error('Error fetching mileage logs:', error);
+        res.status(500).json({ message: 'Failed to fetch mileage logs' });
+    }
+});
+
+app.get('/api/mileage/by-date', async (req, res) => {
+    try {
+        const { vehicleId, date } = req.query;
+        
+        if (!vehicleId || !date) {
+            return res.status(400).json({ message: 'Vehicle ID and date are required' });
+        }
+        
+        // Find mileage log for the specific date
+        const startOfDay = new Date(date);
+        startOfDay.setHours(0, 0, 0, 0);
+        
+        const endOfDay = new Date(date);
+        endOfDay.setHours(23, 59, 59, 999);
+        
+        const mileageLog = await MileageLog.findOne({
+            vehicleId: vehicleId,
+            date: {
+                $gte: startOfDay,
+                $lte: endOfDay
+            }
+        });
+        
+        res.json(mileageLog);
+    } catch (error) {
+        console.error('Error fetching mileage by date:', error);
+        res.status(500).json({ message: 'Failed to fetch mileage data' });
+    }
+});
+
 
 
 app.get('*', (req, res) => {

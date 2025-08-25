@@ -1,0 +1,251 @@
+/* Sidebar styles */
+.sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 260px;
+    height: 100vh;
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+    color: white;
+    padding: 0;
+    box-shadow: 4px 0 15px rgba(0, 0, 0, 0.15);
+    z-index: 999;
+    overflow-y: auto;
+    transition: transform 0.3s ease;
+}
+
+.sidebar-header {
+    padding: 25px 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.sidebar h2 {
+    text-align: center;
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.sidebar-nav {
+    padding: 20px 0;
+}
+
+.sidebar ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.sidebar ul li {
+    margin: 0;
+}
+
+.sidebar ul li a {
+    color: rgba(255, 255, 255, 0.9);
+    text-decoration: none;
+    font-size: 16px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 15px 25px;
+    transition: all 0.3s ease;
+    position: relative;
+    border-left: 3px solid transparent;
+}
+
+.sidebar ul li a i {
+    width: 20px;
+    text-align: center;
+    opacity: 0.8;
+}
+
+.sidebar ul li a:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    border-left-color: var(--secondary-color);
+    padding-left: 30px;
+}
+
+.sidebar ul li a:hover i {
+    opacity: 1;
+    color: var(--secondary-color);
+}
+
+.sidebar ul li a.active {
+    background: rgba(255, 255, 255, 0.15);
+    color: white;
+    border-left-color: var(--secondary-color);
+    font-weight: 600;
+}
+
+.sidebar ul li a.active i {
+    color: var(--secondary-color);
+    opacity: 1;
+}
+
+/* Sidebar toggle for mobile */
+.sidebar-toggle {
+    display: none;
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    z-index: 1001;
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    box-shadow: var(--shadow);
+    font-size: 18px;
+    transition: var(--transition);
+}
+
+.sidebar-toggle:hover {
+    background: var(--primary-dark);
+    transform: translateY(-2px);
+}
+
+/* Main content adjustment */
+body {
+    margin-left: 260px;
+    transition: margin-left 0.3s ease;
+}
+
+.main-content {
+    min-height: 100vh;
+    padding: 20px;
+}
+
+/* Sidebar footer */
+.sidebar-footer {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(0, 0, 0, 0.1);
+}
+
+.sidebar-footer p {
+    margin: 0;
+    font-size: 0.85rem;
+    opacity: 0.7;
+    text-align: center;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+    .sidebar {
+        transform: translateX(-100%);
+    }
+
+    .sidebar.active {
+        transform: translateX(0);
+    }
+
+    .sidebar-toggle {
+        display: block;
+    }
+
+    body {
+        margin-left: 0;
+    }
+
+    /* Overlay for mobile */
+    .sidebar-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 998;
+        backdrop-filter: blur(3px);
+    }
+
+    .sidebar-overlay.active {
+        display: block;
+    }
+}
+
+@media (max-width: 768px) {
+    .sidebar {
+        width: 280px;
+    }
+
+    .sidebar ul li a {
+        padding: 18px 25px;
+        font-size: 17px;
+    }
+
+    .sidebar h2 {
+        font-size: 1.3rem;
+    }
+}
+
+/* Scrollbar for sidebar */
+.sidebar::-webkit-scrollbar {
+    width: 6px;
+}
+
+.sidebar::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 3px;
+}
+
+.sidebar::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.5);
+}
+
+/* Animation for sidebar items */
+.sidebar ul li {
+    animation: slideInLeft 0.3s ease forwards;
+    opacity: 0;
+    transform: translateX(-20px);
+}
+
+.sidebar ul li:nth-child(1) {
+    animation-delay: 0.1s;
+}
+
+.sidebar ul li:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.sidebar ul li:nth-child(3) {
+    animation-delay: 0.3s;
+}
+
+.sidebar ul li:nth-child(4) {
+    animation-delay: 0.4s;
+}
+
+.sidebar ul li:nth-child(5) {
+    animation-delay: 0.5s;
+}
+
+@keyframes slideInLeft {
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Hover effect for the entire sidebar */
+.sidebar:hover {
+    box-shadow: 6px 0 25px rgba(0, 0, 0, 0.2);
+}
