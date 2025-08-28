@@ -13,6 +13,32 @@
 
 document.addEventListener('DOMContentLoaded', function() {
 
+        const isAuthenticated = sessionStorage.getItem('authenticated');
+    const username = sessionStorage.getItem('username');
+    
+    if (!isAuthenticated || isAuthenticated !== 'true') {
+        // Redirect to login page
+        window.location.href = 'login.html';
+        return;
+    }
+    
+    // Display username
+    const currentUserSpan = document.getElementById('current-user');
+    if (currentUserSpan) {
+        currentUserSpan.textContent = username;
+    }
+    
+    // Logout functionality
+    const logoutBtn = document.getElementById('logout-btn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', function() {
+            if (confirm('Are you sure you want to logout?')) {
+                sessionStorage.clear();
+                window.location.href = 'login.html';
+            }
+        });
+    }
+
 
     // DOM elements
     const vehicleSelect = document.getElementById('vehicle-select');
