@@ -695,6 +695,31 @@ app.get('/api/mileage/latest', async (req, res) => {
     }
 });
 
+app.get('/api/vehicles/:id/mileage/history', async (req, res) => {
+    try {
+        const { vehicleId } = req.params;
+        const { startDate, endDate } = req.query;
+        
+        let query = { vehicleId };
+        
+        if (startDate && endDate) {
+            query.date = {
+                $gte: new Date(startDate),
+                $lte: new Date(endDate)
+            };
+        }
+        
+        const mileageLogs = await MileageLog.find(query)
+            .sort({ date: -1 })
+            .populate('vehicleId', 'make model plate');
+        
+        res.json(mileageLogs);
+    } catch (error) {
+        console.error('Error fetching mileage history:', error);
+        res.status(500).json({ message: 'Failed to fetch mileage history' });
+    }
+});
+
 // POST a new mileage log entry
 app.post('/api/mileage', async (req, res) => {
     try {
